@@ -44,7 +44,7 @@ const App: React.FC = () => {
   const [resizeDirection, setResizeDirection] = useState("");
 
   const [position, setPosition] = useState({ x: 100, y: 100 });
-  const panelRef = useRef(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const arecorder = useRef<MediaRecorder | null>(null);
@@ -521,7 +521,7 @@ const App: React.FC = () => {
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (isPoppedOut && panelRef.current && e.target.closest(".timeline-panel-header")) {
+    if (isPoppedOut && panelRef.current && (e.target as HTMLElement).closest(".timeline-panel-header")) {
       setIsDragging(true);
       const rect = panelRef.current.getBoundingClientRect();
       setDragOffset({
@@ -589,19 +589,19 @@ const App: React.FC = () => {
     }, [isResizing, resizeDirection, size, position, dragOffset, isPoppedOut]);
 
     const handleResizeStart = (e: React.MouseEvent, direction: string) => {
-        if (isPoppedOut) {
-          e.stopPropagation();
-          e.preventDefault();
-          setIsResizing(true);
-          setResizeDirection(direction);
+      if (isPoppedOut && panelRef.current) {
+        e.stopPropagation();
+        e.preventDefault();
+        setIsResizing(true);
+        setResizeDirection(direction);
     
-          const rect = panelRef.current.getBoundingClientRect();
-          setDragOffset({
-            x: e.clientX,
-            y: e.clientY,
-          });
-        }
-      };
+        const rect = panelRef.current.getBoundingClientRect();
+        setDragOffset({
+          x: e.clientX,
+          y: e.clientY,
+        });
+      }
+    };
 
   const suggestions = [
     {

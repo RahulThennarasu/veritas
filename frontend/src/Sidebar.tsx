@@ -10,7 +10,7 @@ interface SidebarProps {
   isPoppedOut: boolean;
   position: { x: number; y: number };
   size: { width: number; height: number };
-  panelRef: React.RefObject<HTMLDivElement>;
+  panelRef: React.RefObject<HTMLDivElement | null>;
   handleMouseDown: (e: React.MouseEvent) => void;
   handlePopOut: () => void;
   handleResizeStart: (e: React.MouseEvent, direction: string) => void;

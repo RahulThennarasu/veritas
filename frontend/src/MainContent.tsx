@@ -13,13 +13,13 @@ interface MainContentProps {
   getTopEmotions: () => { [key: string]: number };
   showScreenPopup: boolean;
   popupPosition: { x: number; y: number };
-  popupRef: React.RefObject<HTMLDivElement>;
+  popupRef: React.RefObject<HTMLDivElement | null>;
   handleDragStart: (e: React.MouseEvent) => void;
   handleDrag: (e: React.MouseEvent) => void;
   handleDragEnd: () => void;
   popOutWindow: () => void;
   closePopup: () => void;
-  videoRef: React.RefObject<HTMLVideoElement>;
+  videoRef: React.RefObject<HTMLVideoElement | null>;
 }
 
 const MainContent: React.FC<MainContentProps> = ({
