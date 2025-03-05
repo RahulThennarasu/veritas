@@ -1,6 +1,7 @@
 import React from "react";
 import { Bar } from "react-chartjs-2";
-
+import supabase from '../supabaseClient'; // Adjust the import path as needed
+import { useNavigate } from 'react-router-dom';
 
 interface SidebarProps {
   showSidePanel: boolean;
@@ -31,17 +32,21 @@ const Sidebar: React.FC<SidebarProps> = ({
   handleResizeStart,
   falseClaims,
 }) => {
-  const getTimeOfDay = () => {
-    const hour = new Date().getHours();
-    if (hour < 5) return "Happy Late Night";
-    if (hour < 12) return "Good Morning";
-    if (hour < 18) return "Good Afternoon";
-    if (hour < 22) return "Good Evening";
-    return "Happy Late Night";
-  };
 
   const getUserName = () => {
-    return "User";
+    // Retrieve first name from localStorage, default to "User" if not found
+    return localStorage.getItem('firstName') || "User";
+  };
+
+  const navigate = useNavigate();
+  
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      navigate('/signin');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
   return (
@@ -203,8 +208,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                           {
                             label: "False Claims",
                             data: falseClaims.map((claim) => claim.count),
-                            backgroundColor: "#ae9130",
-                            borderColor: "#ae9130",
+                            backgroundColor: "#0d47a1",
+                            borderColor: "#0d47a1",
                             borderWidth: 1,
                           },
                         ],
@@ -469,12 +474,18 @@ const Sidebar: React.FC<SidebarProps> = ({
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
+              className="sign-out-icon"
             >
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
               <polyline points="16 17 21 12 16 7"></polyline>
               <line x1="21" y1="12" x2="9" y2="12"></line>
             </svg>
-            <span>Exit to Home</span>
+            <button 
+              onClick={handleSignOut}
+              className="sign-out-button"
+            >
+              Sign Out
+            </button>
           </div>
         </div>
       </div>

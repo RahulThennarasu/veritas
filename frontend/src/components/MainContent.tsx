@@ -1,7 +1,9 @@
 import React from "react";
-
+import "../App.css";
 interface MainContentProps {
   showSidePanel: boolean;
+  showTimelinePanel: boolean;
+  isPoppedOutTimeline: boolean;
   statement: string;
   setStatement: (statement: string) => void;
   handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
@@ -24,6 +26,8 @@ interface MainContentProps {
 
 const MainContent: React.FC<MainContentProps> = ({
   showSidePanel,
+  showTimelinePanel,
+  isPoppedOutTimeline,
   statement,
   setStatement,
   handleSubmit,
@@ -53,45 +57,86 @@ const MainContent: React.FC<MainContentProps> = ({
   };
 
   const getUserName = () => {
-    return "User";
+    // Retrieve first name from localStorage, default to "User" if not found
+    return localStorage.getItem('firstName') || "User";
   };
 
   const suggestions = [
     {
-      icon: "",
-      title: "",
+      icon: (
+        <svg 
+          xmlns="http://www.w3.org/2000/svg" 
+          viewBox="0 0 24 24" 
+          className="suggestion-icon"
+        >
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+          <line x1="8" y1="21" x2="16" y2="21"></line>
+          <line x1="12" y1="17" x2="12" y2="21"></line>
+        </svg>
+      ),
+      title: (<div className="suggestion-title">
+      Screen Capture </div>),
+      action: startCapture,
     },
     {
-      icon: "",
-      title: "",
+      icon: (
+        <svg 
+          xmlns="http://www.w3.org/2000/svg" 
+          viewBox="0 0 24 24" 
+          className="suggestion-icon-filled"
+        >
+          <rect x="3" y="13" width="4" height="7" rx="1"></rect>
+          <rect x="10" y="8" width="4" height="12" rx="1"></rect>
+          <rect x="17" y="3" width="4" height="17" rx="1"></rect>
+        </svg>
+      ),
+      title: (<div className="suggestion-title">
+      Timeline Graph </div>),
+      action: popOutWindow,
     },
     {
-      icon: "",
-      title: "",
-    },
+      icon: (
+        <svg 
+          xmlns="http://www.w3.org/2000/svg" 
+          viewBox="0 0 24 24" 
+          className="suggestion-icon"
+        >
+          <path d="M12 2L2 7l10 5 10-5-10-5z" /> 
+          <path d="M2 17l10 5 10-5" /> 
+          <path d="M2 12l10 5 10-5" /> 
+        </svg>
+      ),
+      title: (
+        <div className="suggestion-title">
+          Credibility
+        </div>
+        
+      ),
+      
+    }
   ];
+  
 
   return (
+    
     <div
-      className={`main-content ${
-        showSidePanel ? "sidebar-open" : "sidebar-closed"
-      }`}
+      className={`main-content 
+        ${showSidePanel ? "sidebar-open" : "sidebar-closed"}
+        ${showTimelinePanel ? "timeline-panel-open" : ""}
+        ${isPoppedOutTimeline ? "timeline-panel-popped-out" : ""}
+      `}
     >
+      
       <div className="content-wrapper">
         <div className="greeting-section">
           <div className="wrap">
-            <div className="infinity"></div>
-            <div className="infinity">
-            <div className="infinity-ring-outer"></div>
-            <div className="infinity-ring-middle"></div>
-            <div className="infinity-ring-inner"></div>
-            <div className="infinity-core"></div>
-            <div className="infinity-glow"></div>
-            <div className="infinity-spark"></div>
-            <div className="infinity-spark"></div>
-            <div className="infinity-spark"></div>
-            <div className="infinity-spark"></div>
-            </div>
+          <div className="veritasso-logo">
+        <div className="veritasso-infinity">
+          <div className="veritasso-left"></div>
+          <div className="veritasso-right"></div>
+          <div className="veritasso-bridge"></div>
+        </div>
+      </div>
           </div>
           <h1 className="greeting-text">
             {getTimeOfDay()}, {getUserName()}

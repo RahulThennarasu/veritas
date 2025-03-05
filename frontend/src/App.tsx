@@ -1,13 +1,46 @@
 import React, { useState, useRef, useEffect } from "react";
+import { BrowserRouter as Router, Route, Routes, Navigate, Outlet } from "react-router-dom";
 import axios from "axios";
 import Groq, { toFile } from "groq-sdk";
 import "./App.css";
-import { Bar } from "react-chartjs-2";
 import { Chart, registerables } from "chart.js";
-import Sidebar from "./Sidebar.tsx";
-import MainContent from "./MainContent.tsx";
+import Sidebar from "./components/Sidebar.tsx";
+import MainContent from "./components/MainContent.tsx";
+import supabase from "./supabaseClient";
+import SignUp from './components/SignUp/SignUp.tsx';
+import SignIn from './components/SignIn/SignIn.tsx';
+import AuthCallBack from './components/AuthCallBack.tsx';
 
 Chart.register(...registerables);
+
+// Protected Route Component
+const ProtectedRoute = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data } = await supabase.auth.getUser();
+      setIsAuthenticated(!!data.user);
+    };
+
+    checkAuth();
+
+    // Listen for auth state changes
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsAuthenticated(!!session?.user);
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  if (isAuthenticated === null) {
+    return <div>Loading...</div>; // Or a loading spinner
+  }
+
+  return isAuthenticated ? <Outlet /> : <Navigate to="/signin" replace />;
+};
 
 // Define types for the response data
 interface AnalysisResponse {
@@ -29,14 +62,11 @@ const App: React.FC = () => {
   const [hAudioStats, setHAudioStats] = useState<any>({});
   const [hVideoStats, setHVideoStats] = useState<any>({});
   const [showSidePanel, setShowSidePanel] = useState<boolean>(true);
-  const [activeTab, setActiveTab] = useState("graph");
   const [showScreenPopup, setShowScreenPopup] = useState<boolean>(false);
   const [isPoppedOut, setIsPoppedOut] = useState<boolean>(false);
   const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [activePanel, setActivePanel] = useState<string | null>(null);
-  const [showTimelineGraph, setShowTimelineGraph] = useState<boolean>(false);
   const [showTimelinePanel, setShowTimelinePanel] = useState<boolean>(false);
   const [falseClaims, setFalseClaims] = useState<{ time: number; count: number }[]>([]);
   const [size, setSize] = useState({ width: 450, height: 500 });
@@ -49,7 +79,6 @@ const App: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const arecorder = useRef<MediaRecorder | null>(null);
   const astream = useRef<MediaStream | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const sock = useRef<WebSocket | null>(null);
   const popupRef = useRef<HTMLDivElement | null>(null);
   const poppedWindowRef = useRef<Window | null>(null);
@@ -150,8 +179,14 @@ const App: React.FC = () => {
           try {
             setLoading(true);
             const response = await axios.post<AnalysisResponse>(
-              "http://127.0.0.1:5000/analyze",
-              { statement: lastFiveSentences }
+              "http://127.0.0.1:5000/analyze", 
+              { statement },
+              { 
+                withCredentials: true,
+                headers: {
+                  'Content-Type': 'application/json'
+                }
+              }
             );
             setAnalysis(response.data.analysis);
             setSources(response.data.sources);
@@ -303,8 +338,14 @@ const App: React.FC = () => {
     setLoading(true);
     try {
       const response = await axios.post<AnalysisResponse>(
-        "http://127.0.0.1:5000/analyze",
-        { statement }
+        "http://127.0.0.1:5000/analyze", 
+        { statement },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          }
+        }
       );
       console.log("Backend Response:", response.data);
       setAnalysis(response.data.analysis);
@@ -323,7 +364,7 @@ const App: React.FC = () => {
         ]);
       }
     } catch (error) {
-      console.error("Error analyzing statement:", error);
+      console.error("Full error details:", error.response ? error.response.data : error);
       setAnalysis("An error occurred while analyzing the statement.");
       setSources([]);
     } finally {
@@ -594,72 +635,79 @@ const App: React.FC = () => {
         e.preventDefault();
         setIsResizing(true);
         setResizeDirection(direction);
-    
-        const rect = panelRef.current.getBoundingClientRect();
-        setDragOffset({
-          x: e.clientX,
-          y: e.clientY,
-        });
       }
     };
-
-  const suggestions = [
-    {
-      icon: "",
-      title: "",
-    },
-    {
-      icon: "",
-      title: "",
-    },
-    {
-      icon: "",
-      title: "",
-    },
-  ];
 
   const toggleSidePanel = () => {
     setShowSidePanel(!showSidePanel);
   };
 
   return (
-    <div className="app-container">
-      <Sidebar
-        showSidePanel={showSidePanel}
-        toggleSidePanel={toggleSidePanel}
-        showTimelinePanel={showTimelinePanel}
-        setShowTimelinePanel={setShowTimelinePanel}
-        isPoppedOut={isPoppedOut}
-        position={position}
-        size={size}
-        panelRef={panelRef}
-        handleMouseDown={handleMouseDown}
-        handlePopOut={handlePopOut}
-        handleResizeStart={handleResizeStart}
-        falseClaims={falseClaims}
-      />
-      <MainContent
-        showSidePanel={showSidePanel}
-        statement={statement}
-        setStatement={setStatement}
-        handleSubmit={handleSubmit}
-        loading={loading}
-        startCapture={startCapture}
-        transcript={transcript}
-        analysis={analysis}
-        sources={sources}
-        getTopEmotions={getTopEmotions}
-        showScreenPopup={showScreenPopup}
-        popupPosition={popupPosition}
-        popupRef={popupRef}
-        handleDragStart={handleDragStart}
-        handleDrag={handleDrag}
-        handleDragEnd={handleDragEnd}
-        popOutWindow={popOutWindow}
-        closePopup={closePopup}
-        videoRef={videoRef}
-      />
-    </div>
+    <Router>
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/signin" element={<SignIn />} />
+        <Route path="/signup" element={<SignUp />} />
+
+        {/* Protected Routes */}
+        <Route path="/auth/callback" element={<AuthCallBack />} />
+
+
+        <Route element={<ProtectedRoute />}>
+          <Route 
+            path="/" 
+            element={
+              <div className={`app-container ${
+                showTimelinePanel 
+                  ? (isPoppedOut ? 'timeline-panel-popped-out' : 'timeline-panel-open') 
+                  : ''
+              }`}>
+                <Sidebar
+                  showSidePanel={showSidePanel}
+                  toggleSidePanel={toggleSidePanel}
+                  showTimelinePanel={showTimelinePanel}
+                  setShowTimelinePanel={setShowTimelinePanel}
+                  isPoppedOut={isPoppedOut}
+                  position={position}
+                  size={size}
+                  panelRef={panelRef}
+                  handleMouseDown={handleMouseDown}
+                  handlePopOut={handlePopOut}
+                  handleResizeStart={handleResizeStart}
+                  falseClaims={falseClaims}
+                />
+                <MainContent
+                  showSidePanel={showSidePanel}
+                  statement={statement}
+                  setStatement={setStatement}
+                  handleSubmit={handleSubmit}
+                  loading={loading}
+                  startCapture={startCapture}
+                  transcript={transcript}
+                  analysis={analysis}
+                  sources={sources}
+                  getTopEmotions={getTopEmotions}
+                  showScreenPopup={showScreenPopup}
+                  popupPosition={popupPosition}
+                  popupRef={popupRef}
+                  handleDragStart={handleDragStart}
+                  handleDrag={handleDrag}
+                  handleDragEnd={handleDragEnd}
+                  popOutWindow={popOutWindow}
+                  closePopup={closePopup}
+                  videoRef={videoRef}
+                  showTimelinePanel={showTimelinePanel}
+                  isPoppedOutTimeline={isPoppedOut}
+                />
+              </div>
+            } 
+          />
+        </Route>
+
+        {/* Catch-all redirect */}
+        <Route path="*" element={<Navigate to="/signin" replace />} />
+      </Routes>
+    </Router>
   );
 };
 
