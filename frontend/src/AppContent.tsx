@@ -7,7 +7,7 @@ import "./components/ChatMessages.css"; // Import chat message styles
 import { Chart, registerables } from "chart.js";
 import Sidebar from "./components/Sidebar.tsx";
 import MainContent from "./components/MainContent.tsx";
-import supabase from "./supabaseClient.js";
+import supabase from "./supabaseClient";
 import SignUp from './components/SignUp/SignUp.tsx';
 import SignIn from './components/SignIn/SignIn.tsx';
 import AuthCallBack from './components/AuthCallBack.tsx';
@@ -118,16 +118,38 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     const loadSessionState = async () => {
       try {
-        // Initially, don't set any active chat - start with welcome screen
-        // Only set active chat if explicitly passed from sign-in process
+        // Check if we have state passed from sign-in process
         if (location.state?.restoreSession && location.state?.restoreChatId) {
           setActiveChatId(location.state.restoreChatId);
           if (location.state.restoreChatId) {
             await fetchChatMessages(location.state.restoreChatId);
           }
+          return;
+        }
+        
+        // Otherwise get the last active chat from Supabase
+        const { success, chatId } = await UserPreferencesService.getLastActiveChat();
+        
+        if (success && chatId) {
+          console.log("Restored last active chat:", chatId);
+          setActiveChatId(chatId);
+          await fetchChatMessages(chatId);
         } else {
-          // Start with no active chat - showing the welcome screen
-          setActiveChatId(null);
+          // If no stored chat or error, try to get the most recent chat
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+          
+          const { data, error } = await supabase
+            .from('chats')
+            .select('id')
+            .eq('user_id', user.id)
+            .order('updated_at', { ascending: false })
+            .limit(1);
+            
+          if (!error && data && data.length > 0) {
+            setActiveChatId(data[0].id);
+            await fetchChatMessages(data[0].id);
+          }
         }
       } catch (error) {
         console.error('Error loading session state:', error);
