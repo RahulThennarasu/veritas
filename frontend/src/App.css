@@ -364,7 +364,7 @@ body {
 }
 
 .result-box a {
-  color: #0d47a1;
+  color: #2196f3;
   text-decoration: none;
   transition: color 0.2s;
 }
@@ -805,6 +805,7 @@ code {
 /* Trial */
 
 /* Timeline Panel Styling */
+/* Timeline Panel Styling */
 .app-container {
   display: flex;
   transition: margin-right 0.3s ease;
@@ -923,14 +924,18 @@ code {
   flex-direction: column;
 }
 
-.timeline-graph-wrapper {
+.timeline-graph-wrapper,
+.timeline-log-wrapper,
+.timeline-settings-wrapper {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.timeline-graph-wrapper h4 {
+.timeline-graph-wrapper h4,
+.timeline-log-wrapper h4,
+.timeline-settings-wrapper h4 {
   margin: 0;
   color: #ddd;
 }
@@ -984,6 +989,193 @@ code {
 .timeline-empty-subtext {
   color: #777;
   font-size: 13px;
+}
+
+/* Log Tab Styles */
+.timeline-log-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.timeline-log-action-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background-color: #2a2a2a;
+  border: 1px solid #444;
+  color: #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.timeline-log-action-button:hover {
+  background-color: #333;
+}
+
+.timeline-log-container {
+  flex: 1;
+  min-height: 250px;
+  position: relative;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 12px;
+  background-color: #232323;
+  overflow-y: auto;
+}
+
+.timeline-log-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.timeline-log-entry {
+  padding: 8px 0;
+  border-bottom: 1px solid #333;
+  display: flex;
+  font-size: 13px;
+}
+
+.timeline-log-entry:last-child {
+  border-bottom: none;
+}
+
+.timeline-log-timestamp {
+  color: #888;
+  min-width: 85px;
+  margin-right: 12px;
+  font-family: monospace;
+}
+
+.timeline-log-message {
+  color: #ddd;
+  flex: 1;
+}
+
+/* Settings Tab Styles */
+.timeline-settings-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.timeline-setting-group {
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 14px;
+  background-color: #232323;
+}
+
+.timeline-setting-group h5 {
+  margin: 0 0 14px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #333;
+  color: #bbb;
+  font-weight: 500;
+}
+
+.timeline-setting-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed #333;
+}
+
+.timeline-setting-item:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.timeline-setting-item label {
+  color: #ccc;
+  font-size: 14px;
+}
+
+.timeline-setting-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  background-color: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.timeline-setting-item input[type="number"],
+.timeline-setting-item select {
+  background-color: #2a2a2a;
+  color: #ddd;
+  border: 1px solid #444;
+  padding: 6px 8px;
+  border-radius: 4px;
+  width: 150px;
+}
+
+.timeline-setting-item input[type="range"] {
+  width: 120px;
+  background-color: #2a2a2a;
+  cursor: pointer;
+}
+
+.timeline-setting-item span {
+  margin-left: 8px;
+  color: #aaa;
+  font-size: 13px;
+  width: 30px;
+  text-align: center;
+}
+
+.timeline-settings-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.timeline-settings-button {
+  padding: 8px 14px;
+  background-color: #2a2a2a;
+  border: 1px solid #444;
+  color: #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.timeline-settings-button:hover {
+  background-color: #333;
+}
+
+.timeline-settings-status {
+  font-size: 12px;
+  color: #888;
+  font-style: italic;
+}
+
+.timeline-references {
+  margin-bottom: 16px;
+}
+
+.timeline-references h4 {
+  margin-bottom: 8px;
+  font-size: 15px;
+}
+
+.timeline-references ul {
+  margin: 0;
+  padding-left: 16px;
+  color: #bbb;
+}
+
+.timeline-references li {
+  margin-bottom: 4px;
 }
 
 .timeline-panel-footer {
@@ -1147,6 +1339,78 @@ code {
   color: inherit;
   padding: 0; /* Remove extra padding */
   margin-left: -4px; /* Adjust alignment slightly */
+}
+
+/* Markdown content styling */
+.markdown-content {
+  padding: 16px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-top: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  line-height: 1.6;
+  color: #333;
+}
+
+.bold-text {
+  font-weight: 700;
+  color: #1a73e8;
+}
+
+.markdown-heading-1 {
+  font-size: 24px;
+  margin-top: 24px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+}
+
+.markdown-heading-2 {
+  font-size: 20px;
+  margin-top: 20px;
+  margin-bottom: 14px;
+  font-weight: 600;
+}
+
+.markdown-heading-3 {
+  font-size: 18px;
+  margin-top: 16px;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.markdown-list {
+  padding-left: 24px;
+  margin-bottom: 16px;
+}
+
+.markdown-list-item {
+  margin-bottom: 8px;
+}
+
+.markdown-paragraph {
+  margin-bottom: 16px;
+}
+
+/* Loading state */
+.analysis-loading {
+  padding: 16px;
+  text-align: center;
+  color: #666;
+  font-style: italic;
+}
+
+/* Analysis container */
+.analysis-container {
+  margin-top: 20px;
+}
+
+.analysis-container h3 {
+  font-size: 18px;
+  margin-bottom: 12px;
+  font-weight: 600;
 }
 
 

@@ -50,56 +50,29 @@ def fetch_urls_from_google(query):
 
 def analyze_text_with_gemini(text):
     """
-    Analyze text using the Gemini API and return a structured analysis.
+    Analyze text for accuracy using the Gemini API.
     """
     model = genai.GenerativeModel('gemini-2.0-flash')
     prompt = f"""
-        Analyze the following statement in a structured format. 
-        
+        Analyze the following statement and identify any false claims. For each false claim, explicitly state that it is "inaccurate" and provide a brief explanation. Ensure that you address each claim individually before moving on to the next part of the statement.
+
         Statement: {text}
 
-        Please provide your analysis in the following format:
-        
-        Main Thesis: [Identify the central argument or main point]
-        
-        Key Claims: [List the key claims made in the statement]
-        
-        Evidence Quality: [Evaluate the quality, relevance, and sufficiency of evidence presented]
-        
-        Potential Biases: [Identify any potential biases, assumptions, or perspectives that might influence the statement]
-        
-        Counterarguments: [Provide potential counterarguments or alternative perspectives not addressed in the statement]
-        
-        For each section, provide a thorough analysis with specific examples from the text.
+        Instructions:
+        1. Break the statement into individual claims or sentences.
+        2. For each claim, determine if it is accurate or inaccurate.
+        3. If a claim is inaccurate, explicitly state "This claim is inaccurate:" followed by a brief explanation.
+        4. If a claim is accurate, state "This claim is accurate:" followed by a brief explanation.
+        5. Do not proceed to the next claim until you have explicitly labeled the current claim as accurate or inaccurate.
+
+        Example:
+        Statement: "The Earth is flat, and the moon is made of cheese."
+        Analysis:
+        - This claim is inaccurate: The Earth is not flat; it is an oblate spheroid.
+        - This claim is inaccurate: The moon is not made of cheese; it is composed of rock and minerals.
         """
     response = model.generate_content(prompt)
-    
-    # Parse the structured response into sections
-    analysis_text = response.text
-    sections = {}
-    
-    # Extract each section using regex or simple string parsing
-    import re
-    
-    # Find each section in the response
-    main_thesis_match = re.search(r'Main Thesis:\s*(.*?)(?=Key Claims:|$)', analysis_text, re.DOTALL)
-    key_claims_match = re.search(r'Key Claims:\s*(.*?)(?=Evidence Quality:|$)', analysis_text, re.DOTALL)
-    evidence_match = re.search(r'Evidence Quality:\s*(.*?)(?=Potential Biases:|$)', analysis_text, re.DOTALL)
-    biases_match = re.search(r'Potential Biases:\s*(.*?)(?=Counterarguments:|$)', analysis_text, re.DOTALL)
-    counter_match = re.search(r'Counterarguments:\s*(.*?)(?=$)', analysis_text, re.DOTALL)
-    
-    # Add sections to the dictionary if found
-    if main_thesis_match: sections['main_thesis'] = main_thesis_match.group(1).strip()
-    if key_claims_match: sections['key_claims'] = key_claims_match.group(1).strip()
-    if evidence_match: sections['evidence_quality'] = evidence_match.group(1).strip()
-    if biases_match: sections['potential_biases'] = biases_match.group(1).strip()
-    if counter_match: sections['counterarguments'] = counter_match.group(1).strip()
-    
-    # If parsing fails, return the full text as a fallback
-    if not sections:
-        return analysis_text
-    
-    return sections
+    return response.text
 
 @app.route("/analyze", methods=["POST"])
 def analyze():
@@ -119,19 +92,9 @@ def analyze():
         "analysis": gemini_response
     })
 
-    # Check if the response is a dictionary or string
-    is_inaccurate = False
-    if isinstance(gemini_response, dict):
-        # For structured responses, check each section for "inaccurate" or "false"
-        response_text = str(gemini_response)
-        is_inaccurate = "inaccurate" in response_text.lower() or "false" in response_text.lower()
-    else:
-        # For string responses, check directly
-        is_inaccurate = "inaccurate" in gemini_response.lower() or "false" in gemini_response.lower()
-
     # Fetch URLs from Google Search if the text is flagged as inaccurate
     urls = []
-    if is_inaccurate:
+    if "inaccurate" in gemini_response.lower() or "false" in gemini_response.lower():
         print("Fetching supporting URLs from Google Search...")
         urls = fetch_urls_from_google(statement)
 
@@ -155,4 +118,4 @@ def health_check():
     return jsonify({"status": "ok"}), 200
 
 if __name__ == "__main__":
-    app.run(debug=True, host='0.0.0.0', port=5005)
+    app.run(debug=True, host='0.0.0.0', port=5000)

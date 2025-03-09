@@ -17,14 +17,15 @@
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     width: 100%;
     max-width: 400px;
-    padding: 32px;
+    padding: 16px; /* Even smaller padding */
     text-align: center;
     position: absolute;
-    top: 50%;
     left: 50%;
+    top: 50%;
     transform: translate(-50%, -50%);
+    height: auto; /* Let content determine the height */
   }
-  
+
   .sign-in-container .veritasso-logo {
     width: calc(80px * var(--scale));
     height: calc(40px * var(--scale));
@@ -80,9 +81,8 @@
   }
   
   .sign-in-container .welcome-text {
-    font-size: 24px;
-    font-weight: 600;
-    margin-bottom: 8px;
+    font-size: calc(24px * var(--scale));    font-weight: 600;
+    margin-bottom: calc(8px * var(--scale));
     color: #333;
   }
   
@@ -137,7 +137,7 @@
   }
   
   .sign-in-container .input-group {
-    margin-bottom: 16px;
+    margin-bottom: 10px;
     text-align: left;
   }
   
@@ -150,9 +150,9 @@
   
   .sign-in-container .input-group input {
     width: 100%;
-    padding: 12px;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
+    padding: calc(12px * var(--scale));
+    font-size: calc(16px * var(--scale));
+    border-radius: calc(8px * var(--scale));
     font-size: 16px;
   }
   
@@ -182,11 +182,11 @@
   
   .sign-in-container .signin-button {
     width: 100%;
-    padding: 14px;
+    padding: calc(14px * var(--scale));
     background-color: black;
     color: white;
     border: none;
-    border-radius: 8px;
+    border-radius: calc(8px * var(--scale));
     font-weight: 600;
     cursor: pointer;
     transition: background-color 0.3s ease;

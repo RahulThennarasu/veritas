@@ -1,6 +1,9 @@
 import React from "react";
 import "../App.css";
+import InteractiveAnalysis from "./InterativeAnalysis.tsx"; // Import the new component
+
 interface MainContentProps {
+  setShowTimelinePanel: (show: boolean) => void;
   showSidePanel: boolean;
   showTimelinePanel: boolean;
   isPoppedOutTimeline: boolean;
@@ -25,6 +28,7 @@ interface MainContentProps {
 }
 
 const MainContent: React.FC<MainContentProps> = ({
+  setShowTimelinePanel,
   showSidePanel,
   showTimelinePanel,
   isPoppedOutTimeline,
@@ -74,8 +78,7 @@ const MainContent: React.FC<MainContentProps> = ({
           <line x1="12" y1="17" x2="12" y2="21"></line>
         </svg>
       ),
-      title: (<div className="suggestion-title">
-      Screen Capture </div>),
+      title: (<div className="suggestion-title">Screen Capture</div>),
       action: startCapture,
     },
     {
@@ -90,9 +93,8 @@ const MainContent: React.FC<MainContentProps> = ({
           <rect x="17" y="3" width="4" height="17" rx="1"></rect>
         </svg>
       ),
-      title: (<div className="suggestion-title">
-      Timeline Graph </div>),
-      action: popOutWindow,
+      title: (<div className="suggestion-title">Timeline Graph</div>),
+      action: () => setShowTimelinePanel(!showTimelinePanel),
     },
     {
       icon: (
@@ -106,19 +108,12 @@ const MainContent: React.FC<MainContentProps> = ({
           <path d="M2 12l10 5 10-5" /> 
         </svg>
       ),
-      title: (
-        <div className="suggestion-title">
-          Credibility
-        </div>
-        
-      ),
-      
+      title: (<div className="suggestion-title">Credibility</div>),
+      action: () => {}, // Add a placeholder action if needed
     }
   ];
   
-
   return (
-    
     <div
       className={`main-content 
         ${showSidePanel ? "sidebar-open" : "sidebar-closed"}
@@ -126,17 +121,16 @@ const MainContent: React.FC<MainContentProps> = ({
         ${isPoppedOutTimeline ? "timeline-panel-popped-out" : ""}
       `}
     >
-      
       <div className="content-wrapper">
         <div className="greeting-section">
           <div className="wrap">
-          <div className="veritasso-logo">
-        <div className="veritasso-infinity">
-          <div className="veritasso-left"></div>
-          <div className="veritasso-right"></div>
-          <div className="veritasso-bridge"></div>
-        </div>
-      </div>
+            <div className="veritasso-logo">
+              <div className="veritasso-infinity">
+                <div className="veritasso-left"></div>
+                <div className="veritasso-right"></div>
+                <div className="veritasso-bridge"></div>
+              </div>
+            </div>
           </div>
           <h1 className="greeting-text">
             {getTimeOfDay()}, {getUserName()}
@@ -145,7 +139,11 @@ const MainContent: React.FC<MainContentProps> = ({
 
         <div className="suggestion-cards">
           {suggestions.map((suggestion, index) => (
-            <div className="card" key={index}>
+            <div 
+              className="card" 
+              key={index} 
+              onClick={suggestion.action}
+            >
               <div className="card-icon">{suggestion.icon}</div>
               <div className="card-title">{suggestion.title}</div>
             </div>
@@ -291,25 +289,7 @@ const MainContent: React.FC<MainContentProps> = ({
         )}
 
         {analysis && (
-          <div className="result-box">
-            <h2>Analysis</h2>
-            <p>{analysis}</p>
-
-            {sources.length > 0 && (
-              <>
-                <h2>Relevant Sources</h2>
-                <ul>
-                  {sources.map((url, index) => (
-                    <li key={index}>
-                      <a href={url} target="_blank" rel="noopener noreferrer">
-                        {url}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-          </div>
+          <InteractiveAnalysis analysis={analysis} sources={sources} />
         )}
 
         {Object.keys(getTopEmotions()).length > 0 && (

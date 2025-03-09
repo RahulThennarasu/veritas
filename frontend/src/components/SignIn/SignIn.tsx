@@ -4,16 +4,18 @@ import supabase from '../../supabaseClient';
 import './SignIn.css';
 
 const SignIn: React.FC = () => {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  const [success, setSuccess] = useState(false);
+
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess(false); // Reset success state on each sign-in attempt
   
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -26,24 +28,8 @@ const SignIn: React.FC = () => {
         return;
       }
   
-      // Update user metadata with first and last name
-      const { data: updateData, error: updateError } = await supabase.auth.updateUser({
-        data: { 
-          firstName, 
-          lastName 
-        }
-      });
-  
-      if (updateError) {
-        console.error('Error updating user metadata', updateError);
-      }
-  
-      // Store names in local storage for App.tsx to use
-      localStorage.setItem('firstName', firstName);
-      localStorage.setItem('lastName', lastName);
-  
-      // Navigate to the main app
-      navigate('/');
+      // Navigate to the main app after a brief delay
+      setTimeout(() => navigate('/'), 1000);
     } catch (error: any) {
       setError(error.message);
     }
@@ -75,7 +61,7 @@ const SignIn: React.FC = () => {
           </div>
         </div>
         <h2 className="welcome-text">Sign In</h2>
-        <p className="subtitle">Welcome back to Opennote!</p>
+        <p className="subtitle">Welcome back to Veritas!</p>
 
         <button
           type="button"
@@ -96,30 +82,6 @@ const SignIn: React.FC = () => {
               {error}
             </div>
           )}
-
-          <div className="input-group">
-            <label htmlFor="firstName">First Name</label>
-            <input
-              type="text"
-              id="firstName"
-              placeholder="Enter your first name"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="input-group">
-            <label htmlFor="lastName">Last Name</label>
-            <input
-              type="text"
-              id="lastName"
-              placeholder="Enter your last name"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              required
-            />
-          </div>
 
           <div className="input-group">
             <label htmlFor="email">Email</label>
@@ -145,12 +107,15 @@ const SignIn: React.FC = () => {
             />
           </div>
 
+          {success && (
           <div className="success-message">
             <svg className="checkmark" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
             </svg>
             Success!
           </div>
+        )}
+
 
           <button type="submit" className="signin-button">
             Sign In

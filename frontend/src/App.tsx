@@ -10,6 +10,9 @@ import supabase from "./supabaseClient";
 import SignUp from './components/SignUp/SignUp.tsx';
 import SignIn from './components/SignIn/SignIn.tsx';
 import AuthCallBack from './components/AuthCallBack.tsx';
+import InteractiveAnalysis from "./components/InterativeAnalysis.tsx";
+import ReactMarkdown from 'react-markdown'; // Import ReactMarkdown
+
 
 Chart.register(...registerables);
 
@@ -69,9 +72,11 @@ const App: React.FC = () => {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [showTimelinePanel, setShowTimelinePanel] = useState<boolean>(false);
   const [falseClaims, setFalseClaims] = useState<{ time: number; count: number }[]>([]);
+  const [trueClaims, setTrueClaims] = useState<{ time: number; count: number }[]>([]);
   const [size, setSize] = useState({ width: 450, height: 500 });
   const [isResizing, setIsResizing] = useState(false);
   const [resizeDirection, setResizeDirection] = useState("");
+  const [isRecording, setIsRecording] = useState<boolean>(false);
 
   const [position, setPosition] = useState({ x: 100, y: 100 });
   const panelRef = useRef<HTMLDivElement>(null);
@@ -115,7 +120,7 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    if (stream) {
+    if (stream && isRecording) {
       astream.current = new MediaStream();
       for (const track of stream.getAudioTracks()) {
         astream.current.addTrack(track);
@@ -144,7 +149,8 @@ const App: React.FC = () => {
         if (
           arecorder.current &&
           arecorder.current.state === "recording" &&
-          stream.active
+          stream.active &&
+          isRecording
         ) {
           try {
             arecorder.current.stop();
@@ -162,59 +168,130 @@ const App: React.FC = () => {
         }
       };
     }
-  }, [stream]);
+  }, [stream, isRecording]);
 
   const hasAnalyzed = useRef(false);
 
   useEffect(() => {
-    const analyzeTranscript = async () => {
-      if (hasAnalyzed.current) return;
+    // In your React component, modify the axios request:
 
-      if (transcript.trim()) {
-        const sentences = transcript.match(/[^.!?]+[.!?]+/g) || [];
+const analyzeTranscript = async () => {
+  if (hasAnalyzed.current) return;
 
-        if (sentences.length > 0) {
-          const lastFiveSentences = sentences.slice(-5).join(" ").trim();
+  if (transcript.trim()) {
+    const sentences = transcript.match(/[^.!?]+[.!?]+/g) || [];
 
-          try {
-            setLoading(true);
-            const response = await axios.post<AnalysisResponse>(
-              "http://127.0.0.1:5000/analyze", 
-              { statement },
-              { 
-                withCredentials: true,
-                headers: {
-                  'Content-Type': 'application/json'
-                }
-              }
-            );
-            setAnalysis(response.data.analysis);
-            setSources(response.data.sources);
+    if (sentences.length > 0) {
+      const lastFiveSentences = sentences.slice(-5).join(" ").trim();
 
-            const falseClaimCount = (
-              response.data.analysis.match(
-                /This claim is (inaccurate|misleading|vague|false)/gi
-              ) || []
-            ).length;
-
-            if (falseClaimCount > 0) {
-              setFalseClaims((prevClaims) => [
-                ...prevClaims,
-                { time: Date.now(), count: falseClaimCount },
-              ]);
+      try {
+        setLoading(true);
+        const response = await axios.post<AnalysisResponse>(
+          "http://127.0.0.1:5000/analyze", 
+          { statement: transcript },
+          { 
+            withCredentials: true,
+            headers: {
+              'Content-Type': 'application/json'
             }
-
-            hasAnalyzed.current = true;
-          } catch (error) {
-            console.error("Error analyzing transcript:", error);
-            setAnalysis("An error occurred while analyzing the transcript.");
-            setSources([]);
-          } finally {
-            setLoading(false);
           }
+        );
+        setAnalysis(response.data.analysis);
+        setSources(response.data.sources);
+
+        // Count false claims
+        const falseClaimCount = (
+          response.data.analysis.match(
+            /This claim is (inaccurate|misleading|vague|false)/gi
+          ) || []
+        ).length;
+
+        // Count true claims
+        const trueClaimCount = (
+          response.data.analysis.match(
+            /This claim is (correct|true|right|accurate)/gi
+          ) || []
+        ).length;
+
+        // Update false claims if any
+        if (falseClaimCount > 0) {
+          setFalseClaims((prevClaims) => [
+            ...prevClaims,
+            { time: Date.now(), count: falseClaimCount },
+          ]);
+        }
+
+        // Update true claims if any
+        if (trueClaimCount > 0) {
+          setTrueClaims((prevClaims) => [
+            ...prevClaims,
+            { time: Date.now(), count: trueClaimCount },
+          ]);
+        }
+
+        hasAnalyzed.current = true;
+      } catch (error) {
+        console.error("Error analyzing transcript:", error);
+        setAnalysis("An error occurred while analyzing the transcript.");
+        setSources([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+  }
+};
+
+// Also update the handleSubmit function similarly
+const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  setLoading(true);
+  try {
+    const response = await axios.post<AnalysisResponse>(
+      "http://127.0.0.1:5000/analyze", 
+      { statement },
+      {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json'
         }
       }
-    };
+    );
+    console.log("Backend Response:", response.data);
+    setAnalysis(response.data.analysis);
+    setSources(response.data.sources);
+
+    const falseClaimCount = (
+      response.data.analysis.match(
+        /This claim is (inaccurate|misleading|vague|false)/gi
+      ) || []
+    ).length;
+
+    if (falseClaimCount > 0) {
+      setFalseClaims((prevClaims) => [
+        ...prevClaims,
+        { time: Date.now(), count: falseClaimCount },
+      ]);
+    }
+    const trueClaimCount = (
+      response.data.analysis.match(
+        /This claim is (accurate|correct|true)/gi
+      ) || []
+    ).length;
+
+    if (trueClaimCount > 0) {
+      setTrueClaims((prevClaims) => [
+        ...prevClaims,
+        { time: Date.now(), count: trueClaimCount },
+      ]);
+    }
+  } catch (error) {
+    console.error("Full error details:", error.response ? error.response.data : error);
+    setAnalysis("An error occurred while analyzing the statement.");
+    setSources([]);
+  } finally {
+    setLoading(false);
+  }
+};
 
     const timeout = setTimeout(() => {
       analyzeTranscript();
@@ -230,6 +307,11 @@ const App: React.FC = () => {
         audio: true,
       });
       setStream(cs);
+      setIsRecording(true);
+      setTranscript(""); // Reset transcript
+      setAnalysis(""); // Reset analysis
+      setSources([]); // Reset sources
+      hasAnalyzed.current = false; // Reset analysis flag
 
       if (videoRef.current) {
         videoRef.current.srcObject = cs;
@@ -245,6 +327,74 @@ const App: React.FC = () => {
       sock.current = connectHume();
     } catch (err) {
       console.error("Error capturing screen:", err);
+    }
+  };
+
+  const stopAndAnalyze = async () => {
+    // Stop recording
+    setIsRecording(false);
+    
+    if (arecorder.current && arecorder.current.state !== "inactive") {
+      arecorder.current.stop();
+    }
+    
+    // Use transcript as the statement to analyze
+    if (transcript.trim()) {
+      setStatement(transcript);
+      setLoading(true);
+      
+      try {
+        const response = await axios.post<AnalysisResponse>(
+          "http://127.0.0.1:5000/analyze", 
+          { statement: transcript },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*'
+            }
+          }
+        );
+        
+        console.log("Backend Response:", response.data);
+        setAnalysis(response.data.analysis);
+        setSources(response.data.sources);
+
+        // Count false claims
+        const falseClaimCount = (
+          response.data.analysis.match(
+            /This claim is (inaccurate|misleading|vague|false)/gi
+          ) || []
+        ).length;
+
+        if (falseClaimCount > 0) {
+          setFalseClaims((prevClaims) => [
+            ...prevClaims,
+            { time: Date.now(), count: falseClaimCount },
+          ]);
+        }
+        
+        // Count true claims
+        const trueClaimCount = (
+          response.data.analysis.match(
+            /This claim is (accurate|correct|true)/gi
+          ) || []
+        ).length;
+
+        if (trueClaimCount > 0) {
+          setTrueClaims((prevClaims) => [
+            ...prevClaims,
+            { time: Date.now(), count: trueClaimCount },
+          ]);
+        }
+      } catch (error) {
+        console.error("Full error details:", error.response ? error.response.data : error);
+        setAnalysis("An error occurred while analyzing the transcript.");
+        setSources([]);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      console.log("No transcript to analyze");
     }
   };
 
@@ -344,23 +494,51 @@ const App: React.FC = () => {
           headers: {
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*'
-          }
+          },
         }
       );
       console.log("Backend Response:", response.data);
+      
+      // Set analysis regardless of format
       setAnalysis(response.data.analysis);
       setSources(response.data.sources);
-
+  
+      // Check if analysis is a string or an object
+      let analysisText = "";
+      if (typeof response.data.analysis === 'string') {
+        analysisText = response.data.analysis;
+      } else if (typeof response.data.analysis === 'object') {
+        // Convert all sections to a single string for pattern matching
+        analysisText = Object.values(response.data.analysis).join(" ");
+      } else {
+        console.error("Unexpected analysis format:", response.data.analysis);
+        analysisText = JSON.stringify(response.data.analysis);
+      }
+  
+      // Now use analysisText for matching patterns
       const falseClaimCount = (
-        response.data.analysis.match(
+        analysisText.match(
           /This claim is (inaccurate|misleading|vague|false)/gi
         ) || []
       ).length;
-
+  
       if (falseClaimCount > 0) {
         setFalseClaims((prevClaims) => [
           ...prevClaims,
           { time: Date.now(), count: falseClaimCount },
+        ]);
+      }
+      
+      const trueClaimCount = (
+        analysisText.match(
+          /This claim is (accurate|correct|true)/gi
+        ) || []
+      ).length;
+  
+      if (trueClaimCount > 0) {
+        setTrueClaims((prevClaims) => [
+          ...prevClaims,
+          { time: Date.now(), count: trueClaimCount },
         ]);
       }
     } catch (error) {
@@ -675,9 +853,13 @@ const App: React.FC = () => {
                   handlePopOut={handlePopOut}
                   handleResizeStart={handleResizeStart}
                   falseClaims={falseClaims}
+                  trueClaims={trueClaims}
                 />
                 <MainContent
+                  setShowTimelinePanel={setShowTimelinePanel}
                   showSidePanel={showSidePanel}
+                  showTimelinePanel={showTimelinePanel}
+                  isPoppedOutTimeline={isPoppedOut}
                   statement={statement}
                   setStatement={setStatement}
                   handleSubmit={handleSubmit}
@@ -696,9 +878,8 @@ const App: React.FC = () => {
                   popOutWindow={popOutWindow}
                   closePopup={closePopup}
                   videoRef={videoRef}
-                  showTimelinePanel={showTimelinePanel}
-                  isPoppedOutTimeline={isPoppedOut}
                 />
+                
               </div>
             } 
           />

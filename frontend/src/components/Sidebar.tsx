@@ -1,7 +1,7 @@
-import React from "react";
-import { Bar } from "react-chartjs-2";
-import supabase from '../supabaseClient'; // Adjust the import path as needed
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from "react";
+import supabase from "../supabaseClient"; // Adjust the import path as needed
+import { useNavigate } from "react-router-dom";
+import Timeline from "./Timeline.tsx"; // Import the Timeline component
 
 interface SidebarProps {
   showSidePanel: boolean;
@@ -16,6 +16,7 @@ interface SidebarProps {
   handlePopOut: () => void;
   handleResizeStart: (e: React.MouseEvent, direction: string) => void;
   falseClaims: { time: number; count: number }[];
+  trueClaims: { time: number; count: number }[];
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -31,23 +32,43 @@ const Sidebar: React.FC<SidebarProps> = ({
   handlePopOut,
   handleResizeStart,
   falseClaims,
+  trueClaims,
 }) => {
+  const [username, setUsername] = useState("User");
 
   const getUserName = () => {
     // Retrieve first name from localStorage, default to "User" if not found
-    return localStorage.getItem('firstName') || "User";
+    return localStorage.getItem("firstName") || "User";
   };
 
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data?.user) return;
+
+      const userId = data.user.id;
+      
+      try {
+        const response = await fetch(`http://localhost:3000/api/users/${userId}`);
+        if (!response.ok) throw new Error("User not found");
+
+        const userData = await response.json();
+        setUsername(userData.firstName || "User");
+      } catch (err) {
+        console.error("Error fetching user:", err);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
   const navigate = useNavigate();
-  
+
   const handleSignOut = async () => {
-    try {
-      await supabase.auth.signOut();
-      navigate('/signin');
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
+    await supabase.auth.signOut();
+    navigate("/signin");
   };
+
 
   return (
     <>
@@ -70,7 +91,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           </svg>
         </button>
       )}
-      
+
       <div className={`sidebar ${showSidePanel ? "open" : "closed"}`}>
         <div className="sidebar-header">
           <h2>Hi, {getUserName()}</h2>
@@ -113,262 +134,25 @@ const Sidebar: React.FC<SidebarProps> = ({
             <span>Timeline Graph</span>
           </div>
 
-          <div
-            ref={panelRef}
-            className={`timeline-panel ${showTimelinePanel ? "open" : ""} ${
-              isPoppedOut ? "popped-out" : ""
-            }`}
-            style={
-              isPoppedOut
-                ? {
-                    position: "absolute",
-                    top: `${position.y}px`,
-                    left: `${position.x}px`,
-                    width: `${size.width}px`,
-                    height: `${size.height}px`,
-                    zIndex: 1000,
-                    boxShadow: "0 4px 15px rgba(0, 0, 0, 0.2)",
-                    border: "1px solid #333",
-                  }
-                : {}
-            }
-            onMouseDown={handleMouseDown}
-          >
-            <div className="timeline-panel-header">
-              <h3>Timeline Graph</h3>
-              <div className="timeline-panel-controls">
-                <button
-                  className="panel-control-button"
-                  title="Pop out"
-                  onClick={() => handlePopOut()}
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <polyline points="15 3 21 3 21 9"></polyline>
-                    <polyline points="9 21 3 21 3 15"></polyline>
-                    <line x1="21" y1="3" x2="14" y2="10"></line>
-                    <line x1="3" y1="21" x2="10" y2="14"></line>
-                  </svg>
-                </button>
-                <button
-                  className="panel-control-button"
-                  title="Close"
-                  onClick={() => setShowTimelinePanel(false)}
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                </button>
-              </div>
-            </div>
+          {/* Timeline component is now imported and used here */}
+          {showTimelinePanel && (
+            <Timeline
+              showSidePanel={showSidePanel}
+              toggleSidePanel={toggleSidePanel}
+              showTimelinePanel={showTimelinePanel}
+              setShowTimelinePanel={setShowTimelinePanel}
+              isPoppedOut={isPoppedOut}
+              position={position}
+              size={size}
+              panelRef={panelRef}
+              handleMouseDown={handleMouseDown}
+              handlePopOut={handlePopOut}
+              handleResizeStart={handleResizeStart}
+              falseClaims={falseClaims}
+              trueClaims={trueClaims}
+            />
+          )}
 
-            <div className="timeline-panel-toolbar">
-              <div className="timeline-panel-tabs">
-                <button className="timeline-tab active">Graph</button>
-                <button className="timeline-tab">Log</button>
-                <button className="timeline-tab">Settings</button>
-              </div>
-            </div>
-
-            <div className="timeline-panel-content">
-              <div className="timeline-graph-wrapper">
-                <h4>False Claims Over Time</h4>
-                <div className="timeline-filter">
-                  <label className="timeline-filter-label">View Mode</label>
-                  <select className="timeline-filter-select">
-                    <option value="all">All Claims</option>
-                    <option value="false">False Claims Only</option>
-                    <option value="questionable">Questionable Claims</option>
-                  </select>
-                </div>
-
-                <div className="timeline-graph-container">
-                  {falseClaims.length > 0 ? (
-                    <Bar
-                      key={falseClaims.length}
-                      data={{
-                        labels: falseClaims.map((claim) =>
-                          new Date(claim.time).toLocaleTimeString()
-                        ),
-                        datasets: [
-                          {
-                            label: "False Claims",
-                            data: falseClaims.map((claim) => claim.count),
-                            backgroundColor: "#0d47a1",
-                            borderColor: "#0d47a1",
-                            borderWidth: 1,
-                          },
-                        ],
-                      }}
-                      options={{
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                          legend: {
-                            display: false,
-                          },
-                          tooltip: {
-                            backgroundColor: "#232323",
-                            titleColor: "#ffffff",
-                            bodyColor: "#cccccc",
-                            borderColor: "#333333",
-                            borderWidth: 1,
-                            padding: 10,
-                            displayColors: false,
-                            callbacks: {
-                              title: (tooltipItems) => {
-                                return `Time: ${tooltipItems[0].label}`;
-                              },
-                            },
-                          },
-                        },
-                        scales: {
-                          x: {
-                            title: {
-                              display: true,
-                              text: "Time",
-                              color: "#888888",
-                            },
-                            grid: {
-                              color: "#2a2a2a",
-                            },
-                            ticks: {
-                              color: "#888888",
-                            },
-                          },
-                          y: {
-                            title: {
-                              display: true,
-                              text: "False Claims Count",
-                              color: "#888888",
-                            },
-                            beginAtZero: true,
-                            grid: {
-                              color: "#2a2a2a",
-                            },
-                            ticks: {
-                              color: "#888888",
-                            },
-                          },
-                        },
-                      }}
-                    />
-                  ) : (
-                    <div className="timeline-empty">
-                      <svg
-                        width="48"
-                        height="48"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#555"
-                        strokeWidth="1.5"
-                      >
-                        <rect
-                          x="3"
-                          y="3"
-                          width="18"
-                          height="18"
-                          rx="2"
-                          ry="2"
-                        ></rect>
-                        <line x1="8" y1="12" x2="16" y2="12"></line>
-                      </svg>
-                      <p className="timeline-empty-text">
-                        No false claims detected yet.
-                      </p>
-                      <p className="timeline-empty-subtext">
-                        Claims will appear here as they are detected
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="timeline-panel-footer">
-                <button className="timeline-action-button">
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                  </svg>
-                  Export Data
-                </button>
-                <button className="timeline-action-button">
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="8" x2="12" y2="16"></line>
-                    <line x1="8" y1="12" x2="16" y2="12"></line>
-                  </svg>
-                  Add Reference
-                </button>
-              </div>
-            </div>
-
-            {isPoppedOut && (
-              <>
-                <div
-                  className="resize-handle resize-e"
-                  onMouseDown={(e) => handleResizeStart(e, "e")}
-                />
-                <div
-                  className="resize-handle resize-s"
-                  onMouseDown={(e) => handleResizeStart(e, "s")}
-                />
-                <div
-                  className="resize-handle resize-se"
-                  onMouseDown={(e) => handleResizeStart(e, "se")}
-                />
-                <div
-                  className="resize-handle resize-w"
-                  onMouseDown={(e) => handleResizeStart(e, "w")}
-                />
-                <div
-                  className="resize-handle resize-n"
-                  onMouseDown={(e) => handleResizeStart(e, "n")}
-                />
-                <div
-                  className="resize-handle resize-sw"
-                  onMouseDown={(e) => handleResizeStart(e, "sw")}
-                />
-                <div
-                  className="resize-handle resize-ne"
-                  onMouseDown={(e) => handleResizeStart(e, "ne")}
-                />
-                <div
-                  className="resize-handle resize-nw"
-                  onMouseDown={(e) => handleResizeStart(e, "nw")}
-                />
-              </>
-            )}
-          </div>
           <div className="menu-item">
             <svg
               width="20"
@@ -397,7 +181,9 @@ const Sidebar: React.FC<SidebarProps> = ({
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <span>Discussion Spaces</span>
+            <span>
+              Discussion Spaces
+            </span>
           </div>
 
           <div className="menu-divider"></div>
@@ -414,7 +200,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               <path d="M12 2l-5.5 9h11L12 2z"></path>
               <path d="M6.5 11L2 20h20l-4.5-9H6.5z"></path>
             </svg>
-            <span>Politics</span>
+            <span>Veritas</span>
           </div>
 
           <div className="menu-divider"></div>
@@ -480,10 +266,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               <polyline points="16 17 21 12 16 7"></polyline>
               <line x1="21" y1="12" x2="9" y2="12"></line>
             </svg>
-            <button 
-              onClick={handleSignOut}
-              className="sign-out-button"
-            >
+            <button onClick={handleSignOut} className="sign-out-button">
               Sign Out
             </button>
           </div>
