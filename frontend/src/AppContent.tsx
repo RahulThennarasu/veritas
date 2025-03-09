@@ -118,38 +118,16 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     const loadSessionState = async () => {
       try {
-        // Check if we have state passed from sign-in process
+        // Initially, don't set any active chat - start with welcome screen
+        // Only set active chat if explicitly passed from sign-in process
         if (location.state?.restoreSession && location.state?.restoreChatId) {
           setActiveChatId(location.state.restoreChatId);
           if (location.state.restoreChatId) {
             await fetchChatMessages(location.state.restoreChatId);
           }
-          return;
-        }
-        
-        // Otherwise get the last active chat from Supabase
-        const { success, chatId } = await UserPreferencesService.getLastActiveChat();
-        
-        if (success && chatId) {
-          console.log("Restored last active chat:", chatId);
-          setActiveChatId(chatId);
-          await fetchChatMessages(chatId);
         } else {
-          // If no stored chat or error, try to get the most recent chat
-          const { data: { user } } = await supabase.auth.getUser();
-          if (!user) return;
-          
-          const { data, error } = await supabase
-            .from('chats')
-            .select('id')
-            .eq('user_id', user.id)
-            .order('updated_at', { ascending: false })
-            .limit(1);
-            
-          if (!error && data && data.length > 0) {
-            setActiveChatId(data[0].id);
-            await fetchChatMessages(data[0].id);
-          }
+          // Start with no active chat - showing the welcome screen
+          setActiveChatId(null);
         }
       } catch (error) {
         console.error('Error loading session state:', error);
