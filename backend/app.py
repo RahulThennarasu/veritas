@@ -1,10 +1,20 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS  # Enable CORS for React frontend
+from flask_cors import CORS
 import requests
 import google.generativeai as genai
-from bs4 import BeautifulSoup  # For parsing HTML
+from bs4 import BeautifulSoup
 import pymongo
 import certifi
+import json
+from datetime import datetime
+from bson import ObjectId, json_util
+
+# MongoDB JSON Encoder to handle ObjectId and dates
+class MongoJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, (datetime, ObjectId)):
+            return str(obj)
+        return json.JSONEncoder.default(self, obj)
 
 app = Flask(__name__)
 # Enable CORS for all routes with explicit configuration
@@ -21,7 +31,9 @@ SERPAPI_API_KEY = ""  # Replace with your SerpAPI key
 client = pymongo.MongoClient('mongodb+srv://rahulthennarasu07:lego3011@veritascluster.fog1e.mongodb.net/?retryWrites=true&w=majority&appName=veritascluster', tlsCAFile=certifi.where())
 db = client["veritas"]
 urls_collection = db["urls"]
-analysis_collection = db["analysis"]  # New collection to store Gemini responses
+analysis_collection = db["analysis"]
+chats_collection = db["chats"]
+messages_collection = db["messages"]
 
 def fetch_urls_from_google(query):
     """
@@ -108,16 +120,65 @@ def analyze():
     """
     data = request.get_json()
     statement = data.get("statement")
+    user_id = data.get("userId")
+    chat_id = data.get("chatId")
     print("Received statement: ", statement)
 
     # Analyze the text with Gemini
     gemini_response = analyze_text_with_gemini(statement)
 
-    # Save analysis result to MongoDB
-    analysis_collection.insert_one({
-        "statement": statement,
-        "analysis": gemini_response
-    })
+    # Check if this is part of an existing chat
+    if chat_id and user_id:
+        # Store the message in the messages collection
+        message_data = {
+            "userId": user_id,
+            "chatId": chat_id,
+            "content": statement,
+            "timestamp": datetime.now(),
+            "type": "user"
+        }
+        message_id = messages_collection.insert_one(message_data).inserted_id
+        
+        # Check if the response is a dictionary or string
+        is_inaccurate = False
+        if isinstance(gemini_response, dict):
+            # For structured responses, check each section for "inaccurate" or "false"
+            response_text = str(gemini_response)
+            is_inaccurate = "inaccurate" in response_text.lower() or "false" in response_text.lower()
+        else:
+            # For string responses, check directly
+            is_inaccurate = "inaccurate" in gemini_response.lower() or "false" in gemini_response.lower()
+        
+        # Fetch URLs from Google Search if the text is flagged as inaccurate
+        urls = []
+        if is_inaccurate:
+            print("Fetching supporting URLs from Google Search...")
+            urls = fetch_urls_from_google(statement)
+        
+        # Store the assistant's response in the messages collection
+        assistant_message = {
+            "userId": user_id,
+            "chatId": chat_id,
+            "content": gemini_response,
+            "sources": urls,
+            "timestamp": datetime.now(),
+            "type": "assistant"
+        }
+        assistant_message_id = messages_collection.insert_one(assistant_message).inserted_id
+        
+        # Update the chat's lastUpdated field
+        chats_collection.update_one(
+            {"_id": ObjectId(chat_id)},
+            {"$set": {"lastUpdated": datetime.now()}}
+        )
+    else:
+        # Save analysis result to MongoDB without chat association
+        analysis_collection.insert_one({
+            "statement": statement,
+            "analysis": gemini_response,
+            "timestamp": datetime.now(),
+            "userId": user_id
+        })
 
     # Check if the response is a dictionary or string
     is_inaccurate = False
@@ -140,16 +201,97 @@ def analyze():
         "analysis": gemini_response,
         "sources": urls
     })
-    
-    # Add explicit CORS headers to the response
-    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-    response.headers.add('Access-Control-Allow-Methods', 'POST')
-    response.headers.add('Access-Control-Allow-Credentials', 'true')
-    
-    return response
 
-# Add a simple health check endpoint
+@app.route("/chats", methods=["GET"])
+def get_chats():
+    """
+    Get all chats for a user
+    """
+    user_id = request.args.get("userId")
+    if not user_id:
+        return jsonify({"error": "User ID is required"}), 400
+    
+    chats = list(chats_collection.find({"userId": user_id}).sort("lastUpdated", -1))
+    return json.loads(json_util.dumps(chats))
+
+@app.route("/chats", methods=["POST"])
+def create_chat():
+    """
+    Create a new chat for a user
+    """
+    data = request.get_json()
+    user_id = data.get("userId")
+    title = data.get("title", "New Chat")
+    
+    if not user_id:
+        return jsonify({"error": "User ID is required"}), 400
+    
+    chat_data = {
+        "userId": user_id,
+        "title": title,
+        "created": datetime.now(),
+        "lastUpdated": datetime.now()
+    }
+    
+    chat_id = chats_collection.insert_one(chat_data).inserted_id
+    return json.loads(json_util.dumps({"_id": chat_id, **chat_data}))
+
+@app.route("/chats/<chat_id>", methods=["GET"])
+def get_chat(chat_id):
+    """
+    Get a specific chat by ID
+    """
+    chat = chats_collection.find_one({"_id": ObjectId(chat_id)})
+    if not chat:
+        return jsonify({"error": "Chat not found"}), 404
+    
+    return json.loads(json_util.dumps(chat))
+
+@app.route("/chats/<chat_id>", methods=["PUT"])
+def update_chat(chat_id):
+    """
+    Update a chat (e.g., change title)
+    """
+    data = request.get_json()
+    title = data.get("title")
+    
+    if not title:
+        return jsonify({"error": "Title is required"}), 400
+    
+    result = chats_collection.update_one(
+        {"_id": ObjectId(chat_id)},
+        {"$set": {"title": title, "lastUpdated": datetime.now()}}
+    )
+    
+    if result.matched_count == 0:
+        return jsonify({"error": "Chat not found"}), 404
+    
+    return jsonify({"success": True})
+
+@app.route("/chats/<chat_id>", methods=["DELETE"])
+def delete_chat(chat_id):
+    """
+    Delete a chat and all its messages
+    """
+    # Delete the chat
+    chat_result = chats_collection.delete_one({"_id": ObjectId(chat_id)})
+    
+    if chat_result.deleted_count == 0:
+        return jsonify({"error": "Chat not found"}), 404
+    
+    # Delete all messages associated with this chat
+    messages_collection.delete_many({"chatId": chat_id})
+    
+    return jsonify({"success": True})
+
+@app.route("/chats/<chat_id>/messages", methods=["GET"])
+def get_chat_messages(chat_id):
+    """
+    Get all messages for a specific chat
+    """
+    messages = list(messages_collection.find({"chatId": chat_id}).sort("timestamp", 1))
+    return json.loads(json_util.dumps(messages))
+
 @app.route("/health", methods=["GET"])
 def health_check():
     return jsonify({"status": "ok"}), 200

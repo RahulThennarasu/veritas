@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import supabase from "../supabaseClient"; // Adjust the import path as needed
 import { useNavigate } from "react-router-dom";
 import Timeline from "./Timeline.tsx"; // Import the Timeline component
+import ChatList from "./ChatList.tsx"; // Import the ChatList component
+import "./ChatList.css"; // Import ChatList styles
 
 interface SidebarProps {
   showSidePanel: boolean;
@@ -17,6 +19,9 @@ interface SidebarProps {
   handleResizeStart: (e: React.MouseEvent, direction: string) => void;
   falseClaims: { time: number; count: number }[];
   trueClaims: { time: number; count: number }[];
+  activeChatId?: string | null;
+  setActiveChatId?: (id: string | null) => void;
+  timelineLoading?: boolean;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -33,8 +38,12 @@ const Sidebar: React.FC<SidebarProps> = ({
   handleResizeStart,
   falseClaims,
   trueClaims,
+  activeChatId,
+  setActiveChatId,
+  timelineLoading = false,
 }) => {
   const [username, setUsername] = useState("User");
+  const [isDiscussionExpanded, setIsDiscussionExpanded] = useState<boolean>(true);
 
   const getUserName = () => {
     // Retrieve first name from localStorage, default to "User" if not found
@@ -67,6 +76,14 @@ const Sidebar: React.FC<SidebarProps> = ({
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     navigate("/signin");
+  };
+  
+  const handleSelectChat = (chatId: string) => {
+    if (setActiveChatId) {
+      setActiveChatId(chatId);
+    }
+    // Here you would typically load the selected chat's messages
+    console.log(`Selected chat: ${chatId}`);
   };
 
 
@@ -150,6 +167,8 @@ const Sidebar: React.FC<SidebarProps> = ({
               handleResizeStart={handleResizeStart}
               falseClaims={falseClaims}
               trueClaims={trueClaims}
+              activeChatId={activeChatId}
+              isLoading={timelineLoading}
             />
           )}
 
@@ -169,7 +188,11 @@ const Sidebar: React.FC<SidebarProps> = ({
             <span>Credibility</span>
           </div>
 
-          <div className="menu-item">
+          <div 
+            className="menu-item"
+            onClick={() => setIsDiscussionExpanded(!isDiscussionExpanded)}
+            style={{ cursor: 'pointer' }}
+          >
             <svg
               width="20"
               height="20"
@@ -184,7 +207,29 @@ const Sidebar: React.FC<SidebarProps> = ({
             <span>
               Discussion Spaces
             </span>
+            <svg
+              style={{ 
+                marginLeft: 'auto', 
+                transform: isDiscussionExpanded ? 'rotate(0deg)' : 'rotate(-90deg)',
+                transition: 'transform 0.3s ease'
+              }}
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
           </div>
+          
+          {isDiscussionExpanded && (
+            <ChatList 
+            onSelectChat={handleSelectChat} 
+            selectedChatId={activeChatId || null}
+          />
+          )}
 
           <div className="menu-divider"></div>
 

@@ -10,11 +10,14 @@ import {
   Legend 
 } from "chart.js";
 import jsPDF from "jspdf";
+import TimelineService from '../services/TimelineService.ts';
 
 // Register ChartJS components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 interface TimelineProps {
+  showSidePanel: boolean;
+  toggleSidePanel: () => void;
   showTimelinePanel: boolean;
   setShowTimelinePanel: (show: boolean) => void;
   isPoppedOut: boolean;
@@ -26,6 +29,8 @@ interface TimelineProps {
   handleResizeStart: (e: React.MouseEvent, direction: string) => void;
   falseClaims: { time: number; count: number }[];
   trueClaims: { time: number; count: number }[];
+  activeChatId?: string | null;
+  isLoading?: boolean; // Add this prop
 }
 
 type TabType = "graph" | "log" | "settings";
@@ -43,6 +48,8 @@ const Timeline: React.FC<TimelineProps> = ({
   handleResizeStart,
   falseClaims,
   trueClaims,
+  activeChatId,
+  isLoading = false,
 }) => {
   const [references, setReferences] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>("graph");
@@ -60,6 +67,46 @@ const Timeline: React.FC<TimelineProps> = ({
     dataSource: "live",
     claimThreshold: 0.75,
   });
+
+  useEffect(() => {
+    console.log("Timeline component received props:", {
+      activeChatId,
+      falseClaims: falseClaims.length,
+      trueClaims: trueClaims.length,
+      isLoading
+    });
+  }, [activeChatId, falseClaims, trueClaims, isLoading]);
+
+  useEffect(() => {
+    if (activeChatId) {
+      addLogEntry(`Showing timeline data for chat: ${activeChatId.substring(0, 8)}...`);
+    } else {
+      addLogEntry('No active chat selected');
+    }
+  }, [activeChatId]);
+
+  // Add a method to clear timeline for the current chat
+  const clearTimelineData = async () => {
+    if (!activeChatId) {
+      addLogEntry('No active chat to clear timeline data from');
+      return;
+    }
+    
+    try {
+      const result = await TimelineService.deleteTimelineData(activeChatId);
+      if (result.success) {
+        addLogEntry(`Timeline data cleared for chat: ${activeChatId.substring(0, 8)}...`);
+        // You should also reset the state in the parent component
+        // This could be done by raising an event
+        setLogEntries([]);
+      } else {
+        addLogEntry('Failed to clear timeline data');
+      }
+    } catch (error) {
+      console.error('Error clearing timeline data:', error);
+      addLogEntry('Error clearing timeline data');
+    }
+  };
 
   const handleAddReference = () => {
     const reference = prompt("Enter the reference details:");
@@ -92,6 +139,10 @@ const Timeline: React.FC<TimelineProps> = ({
 
   // Generate chart data based on viewMode
   const getChartData = () => {
+    console.log("Generating chart data with:", {
+      falseClaims: falseClaims.length,
+      trueClaims: trueClaims.length
+    });
     const labels = [...new Set([
       ...falseClaims.map(claim => new Date(claim.time).toLocaleTimeString()),
       ...trueClaims.map(claim => new Date(claim.time).toLocaleTimeString())
@@ -324,7 +375,33 @@ const Timeline: React.FC<TimelineProps> = ({
             </div>
 
             <div className="timeline-graph-container">
-              {falseClaims.length === 0 && trueClaims.length === 0 ? (
+              {isLoading ? (
+                // Show loading indicator
+                <div className="timeline-loading">
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#2196f3"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="loading-spinner"
+                  >
+                    <line x1="12" y1="2" x2="12" y2="6"></line>
+                    <line x1="12" y1="18" x2="12" y2="22"></line>
+                    <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+                    <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+                    <line x1="2" y1="12" x2="6" y2="12"></line>
+                    <line x1="18" y1="12" x2="22" y2="12"></line>
+                    <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+                    <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+                  </svg>
+                  <p>Loading timeline data...</p>
+                </div>
+              ) : falseClaims.length === 0 && trueClaims.length === 0 ? (
+                // Show empty state
                 <div className="timeline-empty">
                   <svg
                     width="48"
@@ -343,6 +420,7 @@ const Timeline: React.FC<TimelineProps> = ({
                   </p>
                 </div>
               ) : (
+                // Show the chart if we have data
                 <Bar
                   id="timelineChart"
                   data={getChartData()}
@@ -464,6 +542,24 @@ const Timeline: React.FC<TimelineProps> = ({
                     }
                   />
                 </div>
+                <button 
+                  className="timeline-action-button" 
+                  onClick={clearTimelineData}
+                  title="Clear Timeline Data"
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M3 6h18"></path>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  </svg>
+                  Clear Timeline
+                </button>
               </div>
 
               <div className="timeline-setting-group">

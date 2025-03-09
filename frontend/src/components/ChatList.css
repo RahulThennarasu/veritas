@@ -1,0 +1,260 @@
+.chat-list {
+    margin-top: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .chat-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 16px 8px 20px;
+  }
+  
+  .chat-list-header h3 {
+    font-size: 14px;
+    color: #888;
+    margin: 0;
+    font-weight: 500;
+  }
+  
+  .new-chat-button {
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }
+  
+  .new-chat-button:hover {
+    background-color: #2a2a2a;
+    color: #fff;
+  }
+  
+  .new-chat-input-container {
+    padding: 10px 16px;
+    margin: 0 10px;
+    background-color: #2a2a2a;
+    border-radius: 8px;
+  }
+  
+  .new-chat-input-container input {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid #3a3a3a;
+    background-color: #222;
+    color: #eee;
+    margin-bottom: 8px;
+  }
+  
+  .new-chat-input-container input:focus {
+    outline: none;
+    border-color: #2196f3;
+  }
+  
+  .new-chat-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  
+  .new-chat-actions button {
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: none;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .new-chat-actions button:first-child {
+    background-color: #2196f3;
+    color: white;
+  }
+  
+  .new-chat-actions button:last-child {
+    background-color: #3a3a3a;
+    color: #eee;
+  }
+  
+  .new-chat-actions button:hover {
+    transform: translateY(-1px);
+  }
+  
+  .chats {
+    list-style-type: none;
+    padding: 0;
+    margin: 8px 0;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  
+  .chat-list-loading, .empty-chat-list {
+    padding: 10px 20px;
+    color: #888;
+    font-style: italic;
+    font-size: 14px;
+  }
+  
+  .chat-item {
+    position: relative;
+    padding: 8px 16px 8px 20px;
+    margin: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .chat-item:hover {
+    background-color: #2a2a2a;
+  }
+  
+  .chat-item.active {
+    background-color: #2a2a2a;
+  }
+  
+  .chat-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    color: #eee;
+  }
+  
+  .chat-icon {
+    flex-shrink: 0;
+    color: #888;
+  }
+  
+  .chat-actions {
+    display: flex;
+    gap: 6px;
+    visibility: hidden;
+    opacity: 0;
+    transition: all 0.2s ease;
+  }
+  
+  .chat-item:hover .chat-actions {
+    visibility: visible;
+    opacity: 1;
+  }
+  
+  .edit-chat-button, .delete-chat-button {
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }
+  
+  .edit-chat-button:hover, .delete-chat-button:hover {
+    background-color: #3a3a3a;
+    color: #fff;
+  }
+  
+  .delete-chat-button:hover {
+    color: #f44336;
+  }
+  
+  .edit-chat-container {
+    width: 100%;
+  }
+  
+  .edit-chat-container input {
+    width: calc(100% - 16px);
+    padding: 6px 8px;
+    border-radius: 4px;
+    border: 1px solid #3a3a3a;
+    background-color: #222;
+    color: #eee;
+    margin-bottom: 6px;
+  }
+  
+  .edit-chat-container input:focus {
+    outline: none;
+    border-color: #2196f3;
+  }
+  
+  .edit-chat-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  
+  .edit-chat-actions button {
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: none;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .edit-chat-actions button:first-child {
+    background-color: #2196f3;
+    color: white;
+  }
+  
+  .edit-chat-actions button:last-child {
+    background-color: #3a3a3a;
+    color: #eee;
+  }
+  
+  /* Custom scrollbar for the chat list */
+  .chats::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .chats::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .chats::-webkit-scrollbar-thumb {
+    background-color: #3a3a3a;
+    border-radius: 3px;
+  }
+  
+  .chats::-webkit-scrollbar-thumb:hover {
+    background-color: #555;
+  }
+  
+  /* Animation for new items */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .chat-item {
+    animation: fadeIn 0.3s ease-out;
+  }
+  
+  .chat-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  
+  /* Adding a divider between discussion spaces and chat list */
+  .chat-section-divider {
+    height: 1px;
+    background-color: #2a2a2a;
+    margin: 10px 16px;
+    opacity: 0.7;
+  }
