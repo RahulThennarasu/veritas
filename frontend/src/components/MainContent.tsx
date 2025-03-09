@@ -108,167 +108,124 @@ const MainContent: React.FC<MainContentProps> = ({
   }, [chatMessages]);
 
   // Function to fetch analysis for a message
-  // Updated fetchMessageAnalysis function for MainContent.tsx
+  const fetchMessageAnalysis = async (message: ChatMessage) => {
+    setIsLoadingAnalysis(true);
 
-const fetchMessageAnalysis = async (message: ChatMessage) => {
-  setIsLoadingAnalysis(true);
-  setSelectedMessageAnalysis("");
-  setSelectedMessageSources([]);
+    try {
+      // First check if this message already has analysis stored in Supabase
+      const { data: messageData, error } = await supabase
+        .from('chat_messages')
+        .select('analysis, sources')
+        .eq('id', message.id)
+        .single();
 
-  try {
-    // Check if this message already has analysis stored in Supabase
-    const { data: messageData, error } = await supabase
-      .from('chat_messages')
-      .select('analysis, sources')
-      .eq('id', message.id)
-      .single();
-
-    // If the message has analysis data
-    if (!error && messageData && messageData.analysis) {
-      console.log("Found existing analysis:", messageData);
-      
-      let analysisContent = messageData.analysis;
-      
-      // Check if the analysis is a JSON string and parse it
-      try {
-        if (typeof analysisContent === 'string' && (
-          analysisContent.startsWith('{') || 
-          analysisContent.startsWith('[')
-        )) {
-          const parsedAnalysis = JSON.parse(analysisContent);
+      if (error) {
+        console.error("Error fetching message analysis:", error);
+        
+        // If the message doesn't have analysis, look for a system response
+        const userMessageIndex = chatMessages.findIndex(m => m.id === message.id);
+        
+        // Look for the next message from system
+        if (userMessageIndex >= 0 && userMessageIndex + 1 < chatMessages.length && 
+            chatMessages[userMessageIndex + 1].sender === 'system') {
           
+          const systemResponse = chatMessages[userMessageIndex + 1];
+          
+          // Get the full analysis for this system message
+          const { data: systemData, error: systemError } = await supabase
+            .from('chat_messages')
+            .select('analysis, sources')
+            .eq('id', systemResponse.id)
+            .single();
+            
+          if (!systemError && systemData) {
+            setSelectedMessageAnalysis(systemData.analysis || systemResponse.content);
+            setSelectedMessageSources(systemData.sources || []);
+            return;
+          }
+          
+          // Fallback to just using the content
+          setSelectedMessageAnalysis(systemResponse.content);
+          setSelectedMessageSources([]);
+          return;
+        }
+        
+        // If we can't find anything, create a new analysis
+        if (message.content) {
+          try {
+            setSelectedMessageAnalysis("Analyzing message...");
+            
+            const response = await axios.post<AnalysisResponse>(
+              "http://127.0.0.1:5000/analyze", 
+              { statement: message.content },
+              {
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Access-Control-Allow-Origin': '*'
+                },
+              }
+            );
+            
+            setSelectedMessageAnalysis(
+              typeof response.data.analysis === 'string'
+                ? response.data.analysis
+                : JSON.stringify(response.data.analysis, null, 2)
+            );
+            setSelectedMessageSources(response.data.sources);
+            
+            // Save this analysis for future reference
+            await supabase
+              .from('chat_messages')
+              .update({
+                analysis: typeof response.data.analysis === 'string'
+                  ? response.data.analysis
+                  : JSON.stringify(response.data.analysis),
+                sources: response.data.sources
+              })
+              .eq('id', message.id);
+              
+          } catch (analysisError) {
+            console.error("Error creating new analysis:", analysisError);
+            setSelectedMessageAnalysis("Error creating analysis. Please try again.");
+            setSelectedMessageSources([]);
+          }
+        } else {
+          setSelectedMessageAnalysis("Analysis not available for this message.");
+          setSelectedMessageSources([]);
+        }
+        return;
+      }
+      
+      // We found existing analysis in the database
+      if (messageData) {
+        let analysisContent = messageData.analysis || "";
+        
+        // If analysis is a stringified JSON, parse it for better formatting
+        try {
+          const parsedAnalysis = JSON.parse(analysisContent);
           if (typeof parsedAnalysis === 'object') {
-            // Format the object into readable text
             analysisContent = Object.entries(parsedAnalysis)
               .map(([key, value]) => `${key.replace(/_/g, ' ').toUpperCase()}: ${value}`)
               .join('\n\n');
           }
-        }
-      } catch (e) {
-        console.log("Analysis is not in JSON format, using as is");
-        // Not JSON, use as is
-      }
-      
-      setSelectedMessageAnalysis(analysisContent);
-      setSelectedMessageSources(messageData.sources || []);
-      setIsLoadingAnalysis(false);
-      return;
-    }
-    
-    // If no analysis found for the user message, look for the next system message
-    if (message.sender === 'user') {
-      const userMessageIndex = chatMessages.findIndex(m => m.id === message.id);
-      
-      // Look for the next message from system (response to this user message)
-      if (userMessageIndex >= 0 && userMessageIndex + 1 < chatMessages.length && 
-          chatMessages[userMessageIndex + 1].sender === 'system') {
-        
-        const systemResponse = chatMessages[userMessageIndex + 1];
-        console.log("Found system response:", systemResponse);
-        
-        // Check if the system message has analysis data
-        const { data: systemData, error: systemError } = await supabase
-          .from('chat_messages')
-          .select('analysis, sources')
-          .eq('id', systemResponse.id)
-          .single();
-        
-        if (!systemError && systemData && systemData.analysis) {
-          let analysisContent = systemData.analysis;
-          
-          // Try to parse if it's JSON
-          try {
-            if (typeof analysisContent === 'string' && (
-              analysisContent.startsWith('{') || 
-              analysisContent.startsWith('[')
-            )) {
-              const parsedAnalysis = JSON.parse(analysisContent);
-              
-              if (typeof parsedAnalysis === 'object') {
-                // Format the object into readable text
-                analysisContent = Object.entries(parsedAnalysis)
-                  .map(([key, value]) => `${key.replace(/_/g, ' ').toUpperCase()}: ${value}`)
-                  .join('\n\n');
-              }
-            }
-          } catch (e) {
-            // Not JSON, use as is
-          }
-          
-          setSelectedMessageAnalysis(analysisContent);
-          setSelectedMessageSources(systemData.sources || []);
-          setIsLoadingAnalysis(false);
-          return;
+        } catch (e) {
+          // Not JSON, use as is
         }
         
-        // If no analysis in the system message, use its content as the analysis
-        setSelectedMessageAnalysis(systemResponse.content);
-        setSelectedMessageSources(systemResponse.sources || []);
-        setIsLoadingAnalysis(false);
-        return;
-      }
-    }
-    
-    // If we reach here, we need to generate a new analysis for the user message
-    if (message.sender === 'user' && message.content) {
-      console.log("Generating new analysis for message:", message.content);
-      setSelectedMessageAnalysis("Analyzing message...");
-      
-      const response = await axios.post(
-        "http://127.0.0.1:5000/analyze", 
-        { statement: message.content },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
-          },
-        }
-      );
-      
-      console.log("Analysis API response:", response.data);
-      
-      let analysisContent;
-      if (typeof response.data.analysis === 'string') {
-        analysisContent = response.data.analysis;
+        setSelectedMessageAnalysis(analysisContent);
+        setSelectedMessageSources(messageData.sources || []);
       } else {
-        // Convert object to formatted string
-        analysisContent = Object.entries(response.data.analysis)
-          .map(([key, value]) => `${key.replace(/_/g, ' ').toUpperCase()}: ${value}`)
-          .join('\n\n');
+        setSelectedMessageAnalysis("No analysis available");
+        setSelectedMessageSources([]);
       }
-      
-      setSelectedMessageAnalysis(analysisContent);
-      setSelectedMessageSources(response.data.sources || []);
-      
-      // Save this analysis for future reference
-      try {
-        await supabase
-          .from('chat_messages')
-          .update({
-            analysis: typeof response.data.analysis === 'string'
-              ? response.data.analysis
-              : JSON.stringify(response.data.analysis),
-            sources: response.data.sources || []
-          })
-          .eq('id', message.id);
-          
-        console.log("Saved analysis to database");
-      } catch (saveError) {
-        console.error("Error saving analysis to database:", saveError);
-      }
-    } else {
-      // For system messages without analysis
-      setSelectedMessageAnalysis(message.content);
+    } catch (error) {
+      console.error("Error in fetchMessageAnalysis:", error);
+      setSelectedMessageAnalysis("Error retrieving analysis");
       setSelectedMessageSources([]);
+    } finally {
+      setIsLoadingAnalysis(false);
     }
-  } catch (error) {
-    console.error("Error in fetchMessageAnalysis:", error);
-    setSelectedMessageAnalysis("Error retrieving analysis. Please try again.");
-    setSelectedMessageSources([]);
-  } finally {
-    setIsLoadingAnalysis(false);
-  }
-};
+  };
 
   // Function to handle message click
   const handleMessageClick = (message: ChatMessage) => {
