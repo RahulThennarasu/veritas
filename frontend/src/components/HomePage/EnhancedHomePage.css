@@ -1316,11 +1316,6 @@ ul, ol {
 }
 
 /* Dark Mode Styles */
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Variables already set for dark theme */
-  }
-}
 
 /* Light Mode Toggle (if implemented) */
 body.light-mode {

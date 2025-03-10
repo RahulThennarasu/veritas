@@ -1085,18 +1085,15 @@ const AppContent: React.FC = () => {
 
   return (
     <Routes>
-      {/* Public Routes */}
+      <Route path="/" element={<HomePage />} />
       <Route path="/signin" element={<SignIn />} />
       <Route path="/signup" element={<SignUp />} />
-      <Route path="/main" element={<HomePage />} />
-
-      {/* Protected Routes */}
       <Route path="/auth/callback" element={<AuthCallBack />} />
 
 
       <Route element={<ProtectedRoute />}>
         <Route 
-          path="/" 
+          path="/app" 
           element={
             <div className={`app-container ${
               showTimelinePanel 
