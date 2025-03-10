@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef, JSX, useCallback } from 'react';
 import './InteractiveAnalysis.css';
 import axios from 'axios';
+import SimpleMarkdownFormatter from './SimpleMarkdownFormatter.tsx';
+
+
 
 interface HighlightData {
   text: string;
@@ -642,8 +645,8 @@ const InteractiveAnalysis: React.FC<InteractiveAnalysisProps> = ({
       if (currentIndex < highlight.startIndex) {
         result.push(
           <span key={`text-${currentIndex}`}>
-            {analysis.substring(currentIndex, highlight.startIndex)}
-          </span>
+  <SimpleMarkdownFormatter text={analysis.substring(currentIndex)} />
+</span>
         );
       }
       
@@ -785,8 +788,8 @@ const InteractiveAnalysis: React.FC<InteractiveAnalysisProps> = ({
     if (currentIndex < analysis.length) {
       result.push(
         <span key={`text-${currentIndex}`}>
-          {analysis.substring(currentIndex)}
-        </span>
+  <SimpleMarkdownFormatter text={analysis.substring(currentIndex)} />
+</span>
       );
     }
     

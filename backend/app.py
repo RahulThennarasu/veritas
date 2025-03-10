@@ -25,7 +25,7 @@ GEMINI_API_KEY = "AIzaSyCikf9gNf-dWLn9PDm-ob5Q3CfdOPnewhw"
 genai.configure(api_key=GEMINI_API_KEY)
 
 # SerpAPI configuration
-SERPAPI_API_KEY = ""  # Replace with your SerpAPI key
+SERPAPI_API_KEY = "10473f787cb84b7646999ae3493fd494b5fcf9a6f88303adc95ec59ce15b0dea"  # Replace with your SerpAPI key
 
 # MongoDB configuration
 client = pymongo.MongoClient('mongodb+srv://rahulthennarasu07:lego3011@veritascluster.fog1e.mongodb.net/?retryWrites=true&w=majority&appName=veritascluster', tlsCAFile=certifi.where())

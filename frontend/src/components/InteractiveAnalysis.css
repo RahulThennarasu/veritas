@@ -1172,3 +1172,77 @@ input:checked + .slider:before {
       right: 5%;
     }
   }
+
+  /* Add these styles to improve the InteractiveAnalysis component */
+
+.interactive-analysis {
+  max-height: 600px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.analysis-content {
+  flex: 1;
+  overflow: hidden;
+}
+
+.analysis-text {
+  max-height: 450px; /* Set a reasonable max height */
+  overflow-y: auto; /* Enable vertical scrolling */
+  padding-right: 10px; /* Add some space for the scrollbar */
+}
+
+.sources-panel {
+  max-height: 450px;
+  overflow-y: auto;
+}
+
+/* Make the scrollbars more visible and easier to use */
+.analysis-text::-webkit-scrollbar,
+.sources-panel::-webkit-scrollbar,
+.selected-message-analysis::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.analysis-text::-webkit-scrollbar-thumb,
+.sources-panel::-webkit-scrollbar-thumb,
+.selected-message-analysis::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 4px;
+}
+
+.analysis-text::-webkit-scrollbar-track,
+.sources-panel::-webkit-scrollbar-track,
+.selected-message-analysis::-webkit-scrollbar-track {
+  background: #333;
+  border-radius: 4px;
+}
+
+/* Ensure the analysis panel doesn't hide the chat content */
+.content-wrapper {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 30px; /* Add bottom padding to ensure content is visible */
+}
+
+.chat-messages-container {
+  flex: 0 0 auto; /* Don't allow this to shrink */
+  margin-bottom: 20px;
+}
+
+.input-section {
+  flex: 0 0 auto; /* Don't allow this to shrink */
+  margin-bottom: 20px;
+}
+
+.selected-message-analysis {
+  flex: 0 0 auto; /* Don't allow this to shrink */
+}
+
+/* Fix for AI panel hiding chat content */
+.ai-panel {
+  max-height: 400px;
+  overflow-y: auto;
+}

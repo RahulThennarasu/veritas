@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import "../App.css";
 import InteractiveAnalysis from "./InterativeAnalysis.tsx";
 import supabase from "../supabaseClient";
 import axios from "axios";
+import MarkdownMessage from './MarkdownMessage.tsx';
 
 interface AnalysisResponse {
   analysis: string;
@@ -45,6 +46,7 @@ interface MainContentProps {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   chatMessages?: ChatMessage[];
   activeChatId?: string | null;
+  setActiveChatId?: (id: string | null) => void;
 }
 
 const MainContent: React.FC<MainContentProps> = ({
@@ -71,13 +73,16 @@ const MainContent: React.FC<MainContentProps> = ({
   closePopup,
   videoRef,
   chatMessages = [],
-  activeChatId
+  activeChatId,
+  setActiveChatId
 }) => {
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
   const [selectedMessageAnalysis, setSelectedMessageAnalysis] = useState<string>("");
   const [selectedMessageSources, setSelectedMessageSources] = useState<string[]>([]);
   const [isLoadingAnalysis, setIsLoadingAnalysis] = useState<boolean>(false);
-
+  const analysisContainerRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  
   const getTimeOfDay = () => {
     const hour = new Date().getHours();
     if (hour < 5) return "Happy Late Night";
@@ -99,11 +104,8 @@ const MainContent: React.FC<MainContentProps> = ({
 
   // Add this useEffect to scroll to bottom when messages change
   useEffect(() => {
-    if (chatMessages && chatMessages.length > 0) {
-      const chatContainer = document.querySelector('.chat-messages');
-      if (chatContainer) {
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-      }
+    if (chatMessages && chatMessages.length > 0 && chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [chatMessages]);
 
@@ -224,6 +226,13 @@ const MainContent: React.FC<MainContentProps> = ({
       setSelectedMessageSources([]);
     } finally {
       setIsLoadingAnalysis(false);
+      
+      // Scroll to the analysis container after loading
+      setTimeout(() => {
+        if (analysisContainerRef.current) {
+          analysisContainerRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
     }
   };
 
@@ -239,13 +248,14 @@ const MainContent: React.FC<MainContentProps> = ({
     
     setSelectedMessageId(message.id);
     
-    // Only fetch analysis for user messages
-    if (message.sender === 'user') {
-      fetchMessageAnalysis(message);
-    } else {
-      setSelectedMessageAnalysis(message.content);
-      setSelectedMessageSources([]);
-      setIsLoadingAnalysis(false);
+    // Fetch analysis for both user and system messages
+    fetchMessageAnalysis(message);
+  };
+  
+  // Function to return to the homepage
+  const handleReturnHome = () => {
+    if (setActiveChatId) {
+      setActiveChatId(null);
     }
   };
 
@@ -376,6 +386,7 @@ const MainContent: React.FC<MainContentProps> = ({
     border-bottom: 1px solid #333;
     display: flex;
     align-items: center;
+    justify-content: space-between;
   }
 
   .chat-title {
@@ -393,7 +404,8 @@ const MainContent: React.FC<MainContentProps> = ({
     display: none;
   }
   
-  .user-message:hover .message-hint {
+  .user-message:hover .message-hint,
+  .system-message:hover .message-hint {
     display: block;
   }
   
@@ -407,6 +419,8 @@ const MainContent: React.FC<MainContentProps> = ({
     background-color: #272727;
     border-radius: 12px;
     border: 1px solid #333;
+    max-height: 600px;
+    overflow-y: auto;
   }
   
   .selected-message-analysis h3 {
@@ -416,6 +430,10 @@ const MainContent: React.FC<MainContentProps> = ({
     color: #e0e0e0;
     padding-bottom: 8px;
     border-bottom: 1px solid #333;
+    position: sticky;
+    top: 0;
+    background-color: #272727;
+    z-index: 5;
   }
   
   .analysis-loading {
@@ -423,6 +441,28 @@ const MainContent: React.FC<MainContentProps> = ({
     text-align: center;
     color: #aaa;
     font-style: italic;
+  }
+  
+  .home-button {
+    background-color: #2a2a2a;
+    color: #e0e0e0;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background-color 0.2s;
+  }
+  
+  .home-button:hover {
+    background-color: #333;
+  }
+  
+  .home-icon {
+    width: 16px;
+    height: 16px;
   }
 
   @keyframes fadeIn {
@@ -481,49 +521,62 @@ const MainContent: React.FC<MainContentProps> = ({
           // Show chat messages when a chat is selected
           <div className="chat-messages-container">
             <style>{chatMessagesStyles}</style>
-            <div className="chat-messages">
-              {chatMessages && chatMessages.length > 0 ? (
-                chatMessages.map((message) => (
-                  <div 
-                    key={message.id} 
-                    className={`chat-message ${message.sender === 'user' ? 'user-message' : 'system-message'} ${selectedMessageId === message.id ? 'selected-message' : ''}`}
-                    onClick={() => handleMessageClick(message)}
-                    style={{ 
-                      cursor: message.sender === 'user' ? 'pointer' : 'default'
-                    }}
+            
+            <div className="chat-header">
+              <h3 className="chat-title">Chat</h3>
+              {setActiveChatId && (
+                <button 
+                  className="home-button" 
+                  onClick={handleReturnHome}
+                  title="Return to home page"
+                >
+                  <svg
+                    className="home-icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
                   >
-                    <div className="message-content">{message.content}</div>
-                    <div className="message-timestamp">
-                      {formatTimestamp(message.timestamp)}
-                    </div>
-                    {message.sender === 'user' && (
-                      <div className="message-hint">
-                        Click to view analysis
-                      </div>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <div className="empty-chat-message">
-                  <p>No messages yet. Start a conversation!</p>
-                </div>
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                  </svg>
+                  Home
+                </button>
               )}
             </div>
             
-            {/* Selected message analysis section */}
-            {selectedMessageId && (
-              <div className="selected-message-analysis">
-                <h3>Analysis for Selected Message</h3>
-                {isLoadingAnalysis ? (
-                  <div className="analysis-loading">Loading analysis...</div>
-                ) : (
-                  <InteractiveAnalysis 
-                    analysis={selectedMessageAnalysis} 
-                    sources={selectedMessageSources} 
-                  />
-                )}
-              </div>
-            )}
+            <div className="chat-messages" ref={chatContainerRef}>
+            {chatMessages && chatMessages.length > 0 ? (
+  chatMessages.map((message) => (
+    <div 
+      key={message.id} 
+      className={`chat-message ${message.sender === 'user' ? 'user-message' : 'system-message'} ${selectedMessageId === message.id ? 'selected-message' : ''}`}
+      onClick={() => handleMessageClick(message)}
+      style={{ 
+        cursor: 'pointer' // Make all messages clickable
+      }}
+    >
+      <div className="message-content">
+        {message.sender === 'system' ? (
+          <MarkdownMessage content={message.content} />
+        ) : (
+          message.content
+        )}
+      </div>
+      <div className="message-timestamp">
+        {formatTimestamp(message.timestamp)}
+      </div>
+      <div className="message-hint">
+        Click to view analysis
+      </div>
+    </div>
+  ))
+) : (
+  <div className="empty-chat-message">
+    <p>No messages yet. Start a conversation!</p>
+  </div>
+)}
+            </div>
           </div>
         )}
 
@@ -598,6 +651,21 @@ const MainContent: React.FC<MainContentProps> = ({
             </p>
           </div>
         </div>
+      
+        {/* Selected message analysis section - with proper ref for scrolling */}
+        {selectedMessageId && (
+  <div className="selected-message-analysis" ref={analysisContainerRef}>
+    <h3>Analysis for Selected Message</h3>
+    {isLoadingAnalysis ? (
+      <div className="analysis-loading">Loading analysis...</div>
+    ) : (
+      <InteractiveAnalysis 
+        analysis={selectedMessageAnalysis} 
+        sources={selectedMessageSources} 
+      />
+    )}
+  </div>
+)}
 
         {transcript && (
           <div className="result-box">

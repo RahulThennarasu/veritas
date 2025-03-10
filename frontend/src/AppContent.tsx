@@ -114,6 +114,13 @@ const AppContent: React.FC = () => {
     dangerouslyAllowBrowser: true,
   });
 
+  const returnToHomePage = () => {
+    setActiveChatId(null);
+    setChatMessages([]);
+    setAnalysis('');
+    setSources([]);
+  };
+
   // Load session state when component mounts
   useEffect(() => {
     const loadSessionState = async () => {
@@ -127,30 +134,9 @@ const AppContent: React.FC = () => {
           return;
         }
         
-        // Otherwise get the last active chat from Supabase
-        const { success, chatId } = await UserPreferencesService.getLastActiveChat();
+        // Do not automatically load the last active chat
+        // We'll leave activeChatId as null to show the greeting page
         
-        if (success && chatId) {
-          console.log("Restored last active chat:", chatId);
-          setActiveChatId(chatId);
-          await fetchChatMessages(chatId);
-        } else {
-          // If no stored chat or error, try to get the most recent chat
-          const { data: { user } } = await supabase.auth.getUser();
-          if (!user) return;
-          
-          const { data, error } = await supabase
-            .from('chats')
-            .select('id')
-            .eq('user_id', user.id)
-            .order('updated_at', { ascending: false })
-            .limit(1);
-            
-          if (!error && data && data.length > 0) {
-            setActiveChatId(data[0].id);
-            await fetchChatMessages(data[0].id);
-          }
-        }
       } catch (error) {
         console.error('Error loading session state:', error);
       }
@@ -162,6 +148,8 @@ const AppContent: React.FC = () => {
   // Save the active chat ID when it changes
   useEffect(() => {
     const saveSessionState = async () => {
+      // Only save the active chat ID if it's not null
+      // and if it's been explicitly set by a user action, not by auto-loading
       if (activeChatId) {
         await UserPreferencesService.updateLastActiveChat(activeChatId);
       }
@@ -635,7 +623,7 @@ const AppContent: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!statement.trim() || !activeChatId) return;
+    if (!statement.trim()) return;
     
     setLoading(true);
     
@@ -648,13 +636,42 @@ const AppContent: React.FC = () => {
         return;
       }
       
+      let currentChatId = activeChatId;
+      
+      // If no active chat, create a new one
+      if (!currentChatId) {
+        // Create a new chat with a title based on the statement
+        const chatTitle = statement.length > 30 
+          ? statement.substring(0, 30) + '...' 
+          : statement;
+          
+        const { data, error } = await supabase
+          .from('chats')
+          .insert([{
+            name: chatTitle,
+            user_id: userData.user.id,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }])
+          .select();
+        
+        if (error) {
+          console.error('Error creating new chat:', error);
+          setLoading(false);
+          return;
+        }
+        
+        currentChatId = data[0].id;
+        setActiveChatId(currentChatId);
+      }
+      
       // First, save the user's message
       const { data: userMsgData, error: userMsgError } = await supabase
         .from('chat_messages')
         .insert([{
           content: statement,
           sender: 'user',
-          chat_id: activeChatId,
+          chat_id: currentChatId,
           user_id: userData.user.id,
           timestamp: new Date().toISOString()
         }])
@@ -673,7 +690,7 @@ const AppContent: React.FC = () => {
         content: statement,
         sender: 'user' as const,
         timestamp: new Date(),
-        chat_id: activeChatId,
+        chat_id: currentChatId,
         user_id: userData.user.id
       };
       setChatMessages(prev => [...prev, userMessage]);
@@ -722,7 +739,7 @@ const AppContent: React.FC = () => {
         .insert([{
           content: responseText,
           sender: 'system',
-          chat_id: activeChatId,
+          chat_id: currentChatId,
           user_id: userData.user.id,
           timestamp: new Date().toISOString(),
           analysis: analysisForStorage, // Store the full analysis
@@ -740,7 +757,7 @@ const AppContent: React.FC = () => {
         content: responseText,
         sender: 'system' as const,
         timestamp: new Date(),
-        chat_id: activeChatId,
+        chat_id: currentChatId,
         user_id: userData.user.id,
         analysis: analysisForStorage,
         sources: response.data.sources
@@ -758,8 +775,8 @@ const AppContent: React.FC = () => {
   
       if (falseClaimCount > 0) {
         // Save to Supabase timeline data
-        if (activeChatId) {
-          await TimelineService.saveTimelineData(activeChatId, 'false_claim', falseClaimCount);
+        if (currentChatId) {
+          await TimelineService.saveTimelineData(currentChatId, 'false_claim', falseClaimCount);
         }
         
         setFalseClaims(prev => [...prev, { time: Date.now(), count: falseClaimCount }]);
@@ -771,8 +788,8 @@ const AppContent: React.FC = () => {
   
       if (trueClaimCount > 0) {
         // Save to Supabase timeline data
-        if (activeChatId) {
-          await TimelineService.saveTimelineData(activeChatId, 'true_claim', trueClaimCount);
+        if (currentChatId) {
+          await TimelineService.saveTimelineData(currentChatId, 'true_claim', trueClaimCount);
         }
         
         setTrueClaims(prev => [...prev, { time: Date.now(), count: trueClaimCount }]);
@@ -782,7 +799,7 @@ const AppContent: React.FC = () => {
       await supabase
         .from('chats')
         .update({ updated_at: new Date().toISOString() })
-        .eq('id', activeChatId);
+        .eq('id', currentChatId);
         
     } catch (error: any) {
       console.error("Error in handleSubmit:", error.response ? error.response.data : error);
@@ -1099,6 +1116,8 @@ const AppContent: React.FC = () => {
                 activeChatId={activeChatId}
                 setActiveChatId={setActiveChatId}
                 timelineLoading={timelineLoading}
+                chatMessages={chatMessages}
+                analysisSources={sources}
               />
               <MainContent
                 setShowTimelinePanel={setShowTimelinePanel}
@@ -1125,6 +1144,7 @@ const AppContent: React.FC = () => {
                 videoRef={videoRef}
                 chatMessages={chatMessages}
                 activeChatId={activeChatId}
+                setActiveChatId={returnToHomePage} // This changes the prop name but preserves functionality
               />
               
             </div>

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import Timeline from "./Timeline.tsx"; // Import the Timeline component
 import ChatList from "./ChatList.tsx"; // Import the ChatList component
 import "./ChatList.css"; // Import ChatList styles
+import CredibilityFeature from './CredibilityFeature.tsx';
 
 interface SidebarProps {
   showSidePanel: boolean;
@@ -22,6 +23,9 @@ interface SidebarProps {
   activeChatId?: string | null;
   setActiveChatId?: (id: string | null) => void;
   timelineLoading?: boolean;
+  chatMessages?: any[]; 
+  analysisSources?: string[];
+  
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -41,9 +45,18 @@ const Sidebar: React.FC<SidebarProps> = ({
   activeChatId,
   setActiveChatId,
   timelineLoading = false,
+  chatMessages,
+  analysisSources
 }) => {
   const [username, setUsername] = useState("User");
   const [isDiscussionExpanded, setIsDiscussionExpanded] = useState<boolean>(true);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showBugReport, setShowBugReport] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+  const [darkMode, setDarkMode] = useState(true);
+  const [fontSize, setFontSize] = useState(14);
+  const [bugReportMessage, setBugReportMessage] = useState("");
+  const [bugReportSuccess, setBugReportSuccess] = useState(false);
 
   const getUserName = () => {
     // Retrieve first name from localStorage, default to "User" if not found
@@ -85,7 +98,61 @@ const Sidebar: React.FC<SidebarProps> = ({
     // Here you would typically load the selected chat's messages
     console.log(`Selected chat: ${chatId}`);
   };
-
+  
+  const sendBugReport = async () => {
+    if (!bugReportMessage.trim()) return;
+    
+    try {
+      // In a real application, you would send this to your backend
+      // For now, we'll simulate sending an email
+      console.log("Sending bug report:", bugReportMessage);
+      
+      // Simple email sending simulation - in production, replace with actual API call
+      const emailContent = `
+        Bug Report from: ${username}
+        
+        Message: ${bugReportMessage}
+      `;
+      
+      // Log the email content to console
+      console.log("Email that would be sent to rahulthennarasu07@gmail.com:");
+      console.log(emailContent);
+      
+      // Simulate API call
+      // In production, replace with actual email sending
+      const sendEmail = async () => {
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            resolve({ success: true });
+          }, 1500);
+        });
+      };
+      
+      await sendEmail();
+      
+      setBugReportSuccess(true);
+      setTimeout(() => {
+        setShowBugReport(false);
+        setBugReportSuccess(false);
+        setBugReportMessage("");
+      }, 3000);
+    } catch (error) {
+      console.error("Error sending bug report:", error);
+      alert("Failed to send bug report. Please try again later.");
+    }
+  };
+  
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+    // In a real app, you'd update the app's theme here
+    document.body.classList.toggle('light-mode');
+  };
+  
+  const changeFontSize = (size: number) => {
+    setFontSize(size);
+    // In a real app, you'd update the app's font size here
+    document.documentElement.style.setProperty('--base-font-size', `${size}px`);
+  };
 
   return (
     <>
@@ -172,21 +239,10 @@ const Sidebar: React.FC<SidebarProps> = ({
             />
           )}
 
-          <div className="menu-item">
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-              <circle cx="8.5" cy="8.5" r="1.5"></circle>
-              <polyline points="21 15 16 10 5 21"></polyline>
-            </svg>
-            <span>Credibility</span>
-          </div>
+<CredibilityFeature 
+  activeChatId={activeChatId} 
+  analysisSourceUrls={analysisSources || []}
+/>
 
           <div 
             className="menu-item"
@@ -250,7 +306,14 @@ const Sidebar: React.FC<SidebarProps> = ({
 
           <div className="menu-divider"></div>
 
-          <div className="menu-item">
+          <div 
+            className="menu-item"
+            onClick={() => {
+              setShowSettings(true);
+              setShowBugReport(false);
+              setShowHelp(false);
+            }}
+          >
             <svg
               width="20"
               height="20"
@@ -265,7 +328,14 @@ const Sidebar: React.FC<SidebarProps> = ({
             <span>Settings</span>
           </div>
 
-          <div className="menu-item">
+          <div 
+            className="menu-item"
+            onClick={() => {
+              setShowBugReport(true);
+              setShowSettings(false);
+              setShowHelp(false);
+            }}
+          >
             <svg
               width="20"
               height="20"
@@ -281,7 +351,14 @@ const Sidebar: React.FC<SidebarProps> = ({
             <span>Report Bug</span>
           </div>
 
-          <div className="menu-item">
+          <div 
+            className="menu-item"
+            onClick={() => {
+              setShowHelp(true);
+              setShowSettings(false);
+              setShowBugReport(false);
+            }}
+          >
             <svg
               width="20"
               height="20"
@@ -317,6 +394,193 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
       </div>
+      
+      {/* Modal for Settings */}
+      {showSettings && (
+        <div className="modal-overlay" onClick={() => setShowSettings(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Settings</h3>
+              <button className="close-modal" onClick={() => setShowSettings(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="settings-section">
+                <h4>Appearance</h4>
+                <div className="setting-item">
+                  <label>Dark Mode</label>
+                  <div className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={darkMode}
+                      onChange={toggleDarkMode}
+                      id="darkmode-toggle"
+                    />
+                    <label htmlFor="darkmode-toggle" className="toggle-label"></label>
+                  </div>
+                </div>
+                <div className="setting-item">
+                  <label>Font Size</label>
+                  <div className="font-size-controls">
+                    <button onClick={() => changeFontSize(fontSize - 1)} disabled={fontSize <= 12}>-</button>
+                    <span>{fontSize}px</span>
+                    <button onClick={() => changeFontSize(fontSize + 1)} disabled={fontSize >= 20}>+</button>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="settings-section">
+                <h4>Notification Preferences</h4>
+                <div className="setting-item">
+                  <label>Email Notifications</label>
+                  <div className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      id="email-toggle"
+                    />
+                    <label htmlFor="email-toggle" className="toggle-label"></label>
+                  </div>
+                </div>
+                <div className="setting-item">
+                  <label>Push Notifications</label>
+                  <div className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      id="push-toggle"
+                    />
+                    <label htmlFor="push-toggle" className="toggle-label"></label>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="settings-section">
+                <h4>Account Settings</h4>
+                <button className="text-button">Change Password</button>
+                <button className="text-button">Privacy Settings</button>
+                <button className="text-button text-danger">Delete Account</button>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="primary-button" onClick={() => setShowSettings(false)}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Modal for Bug Report */}
+      {showBugReport && (
+        <div className="modal-overlay" onClick={() => setShowBugReport(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Report a Bug</h3>
+              <button className="close-modal" onClick={() => setShowBugReport(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              {bugReportSuccess ? (
+                <div className="success-message">
+                  <svg className="success-icon" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm4.59-12.42L10 14.17l-2.59-2.58L6 13l4 4 8-8z"/>
+                  </svg>
+                  <p>Bug report sent successfully! Thank you for your feedback.</p>
+                </div>
+              ) : (
+                <>
+                  <p>Please describe the bug you encountered in detail. This will be sent to: rahulthennarasu07@gmail.com</p>
+                  <textarea
+                    className="bug-report-textarea"
+                    rows={6}
+                    placeholder="Describe what happened, what you expected to happen, and any steps to reproduce the issue..."
+                    value={bugReportMessage}
+                    onChange={e => setBugReportMessage(e.target.value)}
+                  ></textarea>
+                  <div className="attachment-section">
+                    <button className="text-button">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                      </svg>
+                      Attach Screenshot
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="modal-footer">
+              {!bugReportSuccess && (
+                <>
+                  <button className="secondary-button" onClick={() => setShowBugReport(false)}>Cancel</button>
+                  <button 
+                    className="primary-button" 
+                    onClick={sendBugReport}
+                    disabled={!bugReportMessage.trim()}
+                  >
+                    Send Report
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Modal for Help */}
+      {showHelp && (
+        <div className="modal-overlay" onClick={() => setShowHelp(false)}>
+          <div className="modal-content help-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Help & Support</h3>
+              <button className="close-modal" onClick={() => setShowHelp(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="help-section">
+                <h4>Getting Started</h4>
+                <div className="help-item">
+                  <h5>What is Veritas?</h5>
+                  <p>Veritas is a tool that helps you analyze statements and detect potential inaccuracies or misleading information.</p>
+                </div>
+                <div className="help-item">
+                  <h5>How to use Veritas</h5>
+                  <p>Type or paste a statement in the input field and press Enter. Veritas will analyze the statement and provide feedback on its accuracy.</p>
+                </div>
+              </div>
+              
+              <div className="help-section">
+                <h4>Features</h4>
+                <div className="help-item">
+                  <h5>Timeline Graph</h5>
+                  <p>The Timeline Graph shows the frequency of accurate and inaccurate claims detected over time.</p>
+                </div>
+                <div className="help-item">
+                  <h5>Screen Capture</h5>
+                  <p>The Screen Capture feature allows you to record your screen and analyze statements in real-time.</p>
+                </div>
+                <div className="help-item">
+                  <h5>Discussion Spaces</h5>
+                  <p>Discussion Spaces let you organize your chats and analyses into separate categories.</p>
+                </div>
+              </div>
+              
+              <div className="help-section">
+                <h4>Troubleshooting</h4>
+                <div className="help-item">
+                  <h5>Common Issues</h5>
+                  <ul>
+                    <li>If the analysis is not working, make sure you have a stable internet connection</li>
+                    <li>For screen capture issues, make sure you've granted the necessary permissions</li>
+                    <li>If the app feels slow, try refreshing the page or clearing your browser cache</li>
+                  </ul>
+                </div>
+              </div>
+              
+              <div className="help-section">
+                <h4>Contact Support</h4>
+                <p>Need more help? Contact us at: <a href="mailto:rahulthennarasu07@gmail.com">rahulthennarasu07@gmail.com</a></p>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="primary-button" onClick={() => setShowHelp(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
