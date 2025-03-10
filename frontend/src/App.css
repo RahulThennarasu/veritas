@@ -602,7 +602,7 @@ code {
 
 :root {
   /* Change this single value to scale the entire logo */
-  --scale: 2;
+  --scale: 10;
 }
 
 .veritasso-logo {

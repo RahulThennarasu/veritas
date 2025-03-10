@@ -15,6 +15,8 @@ import InteractiveAnalysis from "./components/InterativeAnalysis.tsx";
 import ReactMarkdown from 'react-markdown'; // Import ReactMarkdown
 import TimelineService from "./services/TimelineService.ts";
 import UserPreferencesService from "./services/UserPreferencesService.ts";
+import HomePage from './components/HomePage/HomePage.tsx';
+
 
 Chart.register(...registerables);
 
@@ -686,12 +688,12 @@ const AppContent: React.FC = () => {
       
       // Add user message to state for immediate display
       const userMessageId = userMsgData?.[0]?.id;
-      const userMessage = {
+      const userMessage: ChatMessage = {
         id: userMessageId || 'temp-id-' + Date.now(),
         content: statement,
         sender: 'user' as const,
         timestamp: new Date(),
-        chat_id: currentChatId,
+        chat_id: currentChatId!, // Assert that currentChatId is not null
         user_id: userData.user.id
       };
       setChatMessages(prev => [...prev, userMessage]);
@@ -753,12 +755,12 @@ const AppContent: React.FC = () => {
       }
       
       // Add system message to state
-      const systemMessage = {
+      const systemMessage: ChatMessage = {
         id: sysMsgData?.[0]?.id || 'temp-id-' + Date.now() + 1,
         content: responseText,
         sender: 'system' as const,
         timestamp: new Date(),
-        chat_id: currentChatId,
+        chat_id: currentChatId!, // Assert that currentChatId is not null
         user_id: userData.user.id,
         analysis: analysisForStorage,
         sources: response.data.sources
@@ -1086,6 +1088,7 @@ const AppContent: React.FC = () => {
       {/* Public Routes */}
       <Route path="/signin" element={<SignIn />} />
       <Route path="/signup" element={<SignUp />} />
+      <Route path="/main" element={<HomePage />} />
 
       {/* Protected Routes */}
       <Route path="/auth/callback" element={<AuthCallBack />} />
