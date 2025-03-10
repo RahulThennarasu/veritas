@@ -1435,7 +1435,7 @@ code {
 }
 
 .formatted-message strong {
-  color: #4CAF50; /* Green for accurate claims */
+  color: #0d47a1; /* Green for accurate claims */
   font-weight: 600;
 }
 
@@ -1443,7 +1443,7 @@ code {
 .formatted-message strong:contains("false"),
 .formatted-message strong:contains("misleading"),
 .formatted-message strong:contains("incorrect") {
-  color: #F44336; /* Red for inaccurate claims */
+  color: #2196f3; /* Red for inaccurate claims */
 }
 
 .formatted-message ul, 
@@ -1459,7 +1459,7 @@ code {
 }
 
 .formatted-message li strong {
-  color: #2196F3; /* Blue for bullet point headers */
+  color: #2196f3; /* Blue for bullet point headers */
 }
 
 /* Better spacing for system messages */
@@ -1475,7 +1475,7 @@ code {
 /* Improve distinction for accurate vs inaccurate claims */
 .formatted-message p:contains("accurate:") {
   background-color: rgba(76, 175, 80, 0.1);
-  border-left: 3px solid #4CAF50;
+  border-left: 3px solid #0d47a1;
   padding: 8px 12px;
   border-radius: 0 4px 4px 0;
   margin-left: -12px;
@@ -1485,7 +1485,7 @@ code {
 .formatted-message p:contains("misleading:"),
 .formatted-message p:contains("false:") {
   background-color: rgba(244, 67, 54, 0.1);
-  border-left: 3px solid #F44336;
+  border-left: 3px solid #2196f3;
   padding: 8px 12px;
   border-radius: 0 4px 4px 0;
   margin-left: -12px;
@@ -1502,14 +1502,14 @@ code {
 .key-section-title {
   font-weight: 600;
   margin-bottom: 8px;
-  color: #2196F3;
+  color: #2196f3;
   font-size: 15px;
 }
 
 /* Since CSS :contains is not widely supported, we'll use classes in the component */
 .claim-accurate {
   background-color: rgba(76, 175, 80, 0.1);
-  border-left: 3px solid #4CAF50;
+  border-left: 3px solid #0d47a1;
   padding: 8px 12px;
   border-radius: 0 4px 4px 0;
   margin-bottom: 8px;
@@ -1517,7 +1517,7 @@ code {
 
 .claim-inaccurate {
   background-color: rgba(244, 67, 54, 0.1);
-  border-left: 3px solid #F44336;
+  border-left: 3px solid #2196f3;
   padding: 8px 12px;
   border-radius: 0 4px 4px 0;
   margin-bottom: 8px;
@@ -1537,7 +1537,7 @@ code {
   margin-bottom: 8px;
   font-size: 16px;
   font-weight: 600;
-  color: #2196F3; /* Blue for headers */
+  color: #2196f3; /* Blue for headers */
   border-bottom: 1px solid rgba(33, 150, 243, 0.3);
   padding-bottom: 4px;
 }
@@ -1567,7 +1567,7 @@ code {
 /* Claim formatting - we'll use :has() for modern browsers, fallback for others */
 .markdown-message p:has(strong:first-child:contains("This claim is accurate")) {
   background-color: rgba(76, 175, 80, 0.1);
-  border-left: 3px solid #4CAF50;
+  border-left: 3px solid #0d47a1;
   padding: 8px 12px;
   border-radius: 0 4px 4px 0;
   margin-left: -12px;
@@ -1575,7 +1575,7 @@ code {
 
 .markdown-message p:has(strong:first-child:contains("This claim is inaccurate")) {
   background-color: rgba(244, 67, 54, 0.1);
-  border-left: 3px solid #F44336;
+  border-left: 3px solid #2196f3;
   padding: 8px 12px;
   border-radius: 0 4px 4px 0;
   margin-left: -12px;
@@ -1590,14 +1590,14 @@ code {
 /* For accurate/inaccurate claims with emoji prefixes */
 .markdown-message p:first-child:contains("✅") {
   background-color: rgba(76, 175, 80, 0.1);
-  border-left: 3px solid #4CAF50;
+  border-left: 3px solid #0d47a1;
   padding: 8px 12px;
   border-radius: 0 4px 4px 0;
 }
 
 .markdown-message p:first-child:contains("❌") {
   background-color: rgba(244, 67, 54, 0.1);
-  border-left: 3px solid #F44336;
+  border-left: 3px solid #2196f3;
   padding: 8px 12px;
   border-radius: 0 4px 4px 0;
 }
@@ -1606,14 +1606,14 @@ code {
 .message-paragraph strong:contains("accurate"),
 .message-paragraph strong:contains("correct"),
 .message-paragraph strong:contains("true") {
-  color: #4CAF50; /* Green for accurate claims */
+  color: #0d47a1; /* Green for accurate claims */
 }
 
 .message-paragraph strong:contains("inaccurate"),
 .message-paragraph strong:contains("misleading"),
 .message-paragraph strong:contains("false"),
 .message-paragraph strong:contains("incorrect") {
-  color: #F44336; /* Red for inaccurate claims */
+  color: #2196f3; /* Red for inaccurate claims */
 }
 
 /* Fix system message styling to provide adequate space */

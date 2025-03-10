@@ -3,7 +3,6 @@ import "../App.css";
 import InteractiveAnalysis from "./InterativeAnalysis.tsx";
 import supabase from "../supabaseClient";
 import axios from "axios";
-import MarkdownMessage from './MarkdownMessage.tsx';
 
 interface AnalysisResponse {
   analysis: string;
@@ -23,8 +22,10 @@ interface ChatMessage {
 
 interface MainContentProps {
   setShowTimelinePanel: (show: boolean) => void;
+  setShowCredibility: (show: boolean) => void;
   showSidePanel: boolean;
   showTimelinePanel: boolean;
+  showCredibility: boolean;
   isPoppedOutTimeline: boolean;
   statement: string;
   setStatement: (statement: string) => void;
@@ -74,7 +75,9 @@ const MainContent: React.FC<MainContentProps> = ({
   videoRef,
   chatMessages = [],
   activeChatId,
-  setActiveChatId
+  setActiveChatId,
+  setShowCredibility,
+  showCredibility,
 }) => {
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
   const [selectedMessageAnalysis, setSelectedMessageAnalysis] = useState<string>("");
@@ -303,7 +306,7 @@ const MainContent: React.FC<MainContentProps> = ({
         </svg>
       ),
       title: (<div className="suggestion-title">Credibility</div>),
-      action: () => {}, // Add a placeholder action if needed
+      action: () => setShowCredibility(!showCredibility),
     }
   ];
 
@@ -342,7 +345,7 @@ const MainContent: React.FC<MainContentProps> = ({
   }
 
   .user-message {
-    background-color: #2196f3;
+    background-color: ##2196f3;
     color: white;
     align-self: flex-end;
     border-bottom-right-radius: 4px;
@@ -410,7 +413,7 @@ const MainContent: React.FC<MainContentProps> = ({
   }
   
   .selected-message {
-    box-shadow: 0 0 0 2px #4CAF50;
+    box-shadow: 0 0 0 2px #0d47a1;
   }
   
   .selected-message-analysis {
@@ -557,12 +560,8 @@ const MainContent: React.FC<MainContentProps> = ({
       }}
     >
       <div className="message-content">
-        {message.sender === 'system' ? (
-          <MarkdownMessage content={message.content} />
-        ) : (
-          message.content
-        )}
-      </div>
+  {message.content}
+</div>
       <div className="message-timestamp">
         {formatTimestamp(message.timestamp)}
       </div>

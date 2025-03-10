@@ -565,17 +565,17 @@
 
 .reliability.high {
   background-color: rgba(76, 175, 80, 0.15);
-  color: #4caf50;
+  color: #0d47a1;
 }
 
 .reliability.medium {
   background-color: rgba(255, 152, 0, 0.15);
-  color: #ff9800;
+  color: #2196f3;
 }
 
 .reliability.low {
   background-color: rgba(244, 67, 54, 0.15);
-  color: #f44336;
+  color: #64b5f6; 
 }
 
 /* Highlight Styling */
@@ -981,11 +981,11 @@ span:hover .highlight-tags {
 }
 
 input:checked + .slider {
-  background-color: #2196F3;
+  background-color: #2196f3;
 }
 
 input:focus + .slider {
-  box-shadow: 0 0 1px #2196F3;
+  box-shadow: 0 0 1px #2196f3;
 }
 
 input:checked + .slider:before {

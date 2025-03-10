@@ -10,7 +10,9 @@ interface SidebarProps {
   showSidePanel: boolean;
   toggleSidePanel: () => void;
   showTimelinePanel: boolean;
+  showCredibility: boolean;
   setShowTimelinePanel: (show: boolean) => void;
+  setShowCredibility: (show: boolean) => void;
   isPoppedOut: boolean;
   position: { x: number; y: number };
   size: { width: number; height: number };
@@ -33,6 +35,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   toggleSidePanel,
   showTimelinePanel,
   setShowTimelinePanel,
+  showCredibility,
+  setShowCredibility,
   isPoppedOut,
   position,
   size,

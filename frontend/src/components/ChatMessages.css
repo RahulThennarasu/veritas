@@ -31,7 +31,7 @@
   }
   
   .user-message {
-    background-color: #2196f3;
+    background-color: ##2196f3;
     color: white;
     align-self: flex-end;
     border-bottom-right-radius: 4px;
@@ -80,7 +80,7 @@
     gap: 8px;
     margin: 16px auto;
     padding: 8px 16px;
-    background-color: #2196f3;
+    background-color: ##2196f3;
     color: white;
     border: none;
     border-radius: 20px;
@@ -186,7 +186,7 @@
   }
   
   .chat-title svg {
-    color: #2196f3;
+    color: ##2196f3;
   }
   
   .chat-actions {
@@ -259,7 +259,7 @@
   
   /* Make selected messages more visually distinct */
   .selected-message {
-    box-shadow: 0 0 0 2px #4CAF50 !important;
+    box-shadow: 0 0 0 2px #0d47a1 !important;
     position: relative;
   }
   
@@ -268,7 +268,7 @@
     position: absolute;
     top: -10px;
     right: -10px;
-    background: #4CAF50;
+    background: #0d47a1;
     color: white;
     width: 20px;
     height: 20px;

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, JSX, useCallback } from 'react';
 import './InteractiveAnalysis.css';
 import axios from 'axios';
-import SimpleMarkdownFormatter from './SimpleMarkdownFormatter.tsx';
 
 
 
@@ -112,7 +111,7 @@ const InteractiveAnalysis: React.FC<InteractiveAnalysisProps> = ({
       },
       {
         regex: /(This claim is (correct|true|right|accurate)[^.]*\.)/gi,
-        color: '#2196f3',
+        color: '##2196f3',
         type: 'system'
       },
       {
@@ -645,7 +644,7 @@ const InteractiveAnalysis: React.FC<InteractiveAnalysisProps> = ({
       if (currentIndex < highlight.startIndex) {
         result.push(
           <span key={`text-${currentIndex}`}>
-  <SimpleMarkdownFormatter text={analysis.substring(currentIndex)} />
+        {analysis.substring(currentIndex)}
 </span>
         );
       }
@@ -788,7 +787,7 @@ const InteractiveAnalysis: React.FC<InteractiveAnalysisProps> = ({
     if (currentIndex < analysis.length) {
       result.push(
         <span key={`text-${currentIndex}`}>
-  <SimpleMarkdownFormatter text={analysis.substring(currentIndex)} />
+        {analysis.substring(currentIndex)}
 </span>
       );
     }
@@ -1131,18 +1130,18 @@ const InteractiveAnalysis: React.FC<InteractiveAnalysisProps> = ({
               title="Yellow"
             />
             <button 
-              style={{ backgroundColor: '#4caf50' }} 
-              onClick={() => addHighlight('#4caf50')}
+              style={{ backgroundColor: '#0d47a1' }} 
+              onClick={() => addHighlight('#0d47a1')}
               title="Green"
-            />
-            <button 
-              style={{ backgroundColor: '#f44336' }} 
-              onClick={() => addHighlight('#f44336')}
-              title="Red"
             />
             <button 
               style={{ backgroundColor: '#2196f3' }} 
               onClick={() => addHighlight('#2196f3')}
+              title="Red"
+            />
+            <button 
+              style={{ backgroundColor: '##2196f3' }} 
+              onClick={() => addHighlight('##2196f3')}
               title="Blue"
             />
             <button 
@@ -1151,8 +1150,8 @@ const InteractiveAnalysis: React.FC<InteractiveAnalysisProps> = ({
               title="Purple"
             />
             <button 
-              style={{ backgroundColor: '#ff9800' }} 
-              onClick={() => addHighlight('#ff9800')}
+              style={{ backgroundColor: '#64b5f6' }} 
+              onClick={() => addHighlight('#64b5f6')}
               title="Orange"
             />
           </div>

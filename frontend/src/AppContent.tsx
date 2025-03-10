@@ -88,6 +88,7 @@ const AppContent: React.FC = () => {
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [showTimelinePanel, setShowTimelinePanel] = useState<boolean>(false);
+  const [showCredibility, setShowCredibility] = useState<boolean>(false);
   const [falseClaims, setFalseClaims] = useState<{ time: number; count: number }[]>([]);
   const [trueClaims, setTrueClaims] = useState<{ time: number; count: number }[]>([]);
   const [size, setSize] = useState({ width: 450, height: 500 });
@@ -1104,6 +1105,8 @@ const AppContent: React.FC = () => {
                 toggleSidePanel={toggleSidePanel}
                 showTimelinePanel={showTimelinePanel}
                 setShowTimelinePanel={setShowTimelinePanel}
+                setShowCredibility={setShowCredibility}
+                showCredibility={showCredibility}
                 isPoppedOut={isPoppedOut}
                 position={position}
                 size={size}
@@ -1144,7 +1147,9 @@ const AppContent: React.FC = () => {
                 videoRef={videoRef}
                 chatMessages={chatMessages}
                 activeChatId={activeChatId}
-                setActiveChatId={returnToHomePage} // This changes the prop name but preserves functionality
+                setActiveChatId={returnToHomePage}
+                setShowCredibility={setShowCredibility}
+                showCredibility={showCredibility}
               />
               
             </div>
